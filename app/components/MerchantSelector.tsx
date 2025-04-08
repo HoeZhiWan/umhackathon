@@ -30,7 +30,7 @@ export default function MerchantSelector({
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-black/[.08] dark:border-white/[.145] bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
       >
-        <span>Merchant: {currentMerchant.name}</span>
+        <span>{currentMerchant.name}</span>
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
           className="h-4 w-4" 

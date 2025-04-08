@@ -5,7 +5,7 @@ import ChatInterface from "../components/ChatInterface";
 import MerchantSelector from "../components/MerchantSelector";
 
 export default function ChatPage() {
-  const [merchantId, setMerchantId] = useState("merchant_1"); // Default merchant
+  const [merchantId, setMerchantId] = useState("abc123"); // Default merchant
 
   return (
     <div className="min-h-screen flex flex-col items-center p-4">

@@ -2,6 +2,13 @@
 
 import { useState, FormEvent, useRef, useEffect } from 'react';
 
+// Define the list of available merchants for name lookup
+const AVAILABLE_MERCHANTS = [
+  { id: "abc123", name: "Laksa" },
+  { id: "def456", name: "Hokkien Mee" },
+  { id: "hij789", name: "Curry Mee" },
+  { id: "klm012", name: "Gulai Ayam" },
+];
 type Message = {
   id: string;
   text: string;
@@ -28,10 +35,13 @@ export default function ChatInterface({ merchantId }: ChatInterfaceProps) {
   // Handle merchant change
   useEffect(() => {
     if (prevMerchantIdRef.current !== merchantId) {
+      // Find merchant name
+      const merchantName = AVAILABLE_MERCHANTS.find(m => m.id === merchantId)?.name || "Unknown";
+      
       // Add a system message about the merchant change
       const systemMessage: Message = {
         id: Date.now().toString(),
-        text: `Switched to a different merchant account (${merchantId}).`,
+        text: `Switched to ${merchantName}.`,
         sender: 'bot',
         timestamp: new Date(),
       };
@@ -43,33 +53,28 @@ export default function ChatInterface({ merchantId }: ChatInterfaceProps) {
 
   // Generate dummy response
   const generateDummyResponse = (question: string): string => {
+    // Find current merchant name
+    const merchantName = AVAILABLE_MERCHANTS.find(m => m.id === merchantId)?.name || "Unknown";
+    
     const merchantSpecificResponses: Record<string, string[]> = {
-      merchant_1: [
-        "This is Shoe Store. How can I help you with our footwear collection?",
-        "As a Shoe Store representative, I can assist with sizing, styles, and availability.",
-        "Thank you for shopping at Shoe Store. Is there a specific brand you're looking for?"
+      "abc123": [
+        `You asked: "${question}" - This is a specific response for Merchant ${merchantName}.`,
       ],
-      merchant_2: [
-        "This is Coffee Shop. How can I help you with our coffee and pastries?",
-        "As a Coffee Shop barista, I can tell you about our beans, brewing methods, and menu items.",
-        "Thanks for visiting Coffee Shop. Would you like to hear about today's special?"
+      "def456": [
+        `You asked: "${question}" - This is a specific response for Merchant ${merchantName}.`,
       ],
-      merchant_3: [
-        "This is Bookstore. How can I help you find your next great read?",
-        "As a Bookstore clerk, I can recommend titles based on your interests.",
-        "Welcome to Bookstore. Are you looking for a specific genre or author?"
+      "hij789": [
+        `You asked: "${question}" - This is a specific response for Merchant ${merchantName}.`,
       ],
-      merchant_4: [
-        "This is Restaurant. How can I help you with our menu or reservations?",
-        "As a Restaurant host, I can tell you about our special dishes and availability.",
-        "Thank you for choosing Restaurant. Would you like to hear about our chef's recommendations?"
-      ]
+      "klm012": [
+        `You asked: "${question}" - This is a specific response for Merchant ${merchantName}.`,
+      ],
     };
     
     const genericResponses = [
-      `You asked: "${question}" - In the future, I'll provide a real answer based on your merchant data.`,
-      "This is a placeholder response for your merchant account.",
-      "In a real implementation, this would use your merchant's data from an API."
+      `You asked: "${question}" - In the future, I'll provide a real answer based on ${merchantName}'s data.`,
+      `This is a placeholder response for your ${merchantName} account.`,
+      `In a real implementation, this would use ${merchantName}'s data from an API.`
     ];
     
     // Get merchant-specific responses or fall back to generic ones
