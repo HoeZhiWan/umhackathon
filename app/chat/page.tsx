@@ -10,7 +10,7 @@ export default function ChatPage() {
   return (
     <div className="min-h-screen flex flex-col items-center p-4">
       <div className="w-full max-w-2xl flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Chat Assistant</h1>
+        <h1 className="text-2xl font-bold">404 Brain Not Found</h1>
         <MerchantSelector 
           currentMerchantId={merchantId}
           onMerchantChange={setMerchantId}

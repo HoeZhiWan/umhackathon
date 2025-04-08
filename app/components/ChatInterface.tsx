@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import MerchantSelector from './MerchantSelector';
 
 interface Message {
   id: string;
@@ -110,10 +109,6 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
       <div className="bg-gray-100 dark:bg-gray-800 p-4 border-b border-black/[.08] dark:border-white/[.145]">
         <div className="flex justify-between items-center">
           <h2 className="font-medium">Chat Assistant</h2>
-          <MerchantSelector 
-            currentMerchantId={merchantId} 
-            onMerchantChange={handleMerchantChange} 
-          />
         </div>
       </div>
       
