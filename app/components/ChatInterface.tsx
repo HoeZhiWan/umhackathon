@@ -1,29 +1,20 @@
-"use client"
+"use client";
 
-import { useState, FormEvent, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import MerchantSelector from './MerchantSelector';
 
-// Define the list of available merchants for name lookup
-const AVAILABLE_MERCHANTS = [
-  { id: "abc123", name: "Laksa" },
-  { id: "def456", name: "Hokkien Mee" },
-  { id: "hij789", name: "Curry Mee" },
-  { id: "klm012", name: "Gulai Ayam" },
-];
-type Message = {
+interface Message {
   id: string;
   text: string;
-  sender: 'user' | 'bot';
+  sender: 'user' | 'bot' | 'system';
   timestamp: Date;
-};
+}
 
-type ChatInterfaceProps = {
-  merchantId: string;
-};
-
-export default function ChatInterface({ merchantId }: ChatInterfaceProps) {
+export default function ChatInterface({ merchantId: initialMerchantId }: { merchantId?: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [merchantId, setMerchantId] = useState(initialMerchantId || "merchant_1"); // Default merchant
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMerchantIdRef = useRef(merchantId);
 
@@ -33,127 +24,128 @@ export default function ChatInterface({ merchantId }: ChatInterfaceProps) {
   }, [messages]);
 
   // Handle merchant change
-  useEffect(() => {
-    if (prevMerchantIdRef.current !== merchantId) {
-      // Find merchant name
-      const merchantName = AVAILABLE_MERCHANTS.find(m => m.id === merchantId)?.name || "Unknown";
-      
-      // Add a system message about the merchant change
-      const systemMessage: Message = {
-        id: Date.now().toString(),
-        text: `Switched to ${merchantName}.`,
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, systemMessage]);
-      prevMerchantIdRef.current = merchantId;
-    }
-  }, [merchantId]);
-
-  // Generate dummy response
-  const generateDummyResponse = (question: string): string => {
-    // Find current merchant name
-    const merchantName = AVAILABLE_MERCHANTS.find(m => m.id === merchantId)?.name || "Unknown";
-    
-    const merchantSpecificResponses: Record<string, string[]> = {
-      "abc123": [
-        `You asked: "${question}" - This is a specific response for Merchant ${merchantName}.`,
-      ],
-      "def456": [
-        `You asked: "${question}" - This is a specific response for Merchant ${merchantName}.`,
-      ],
-      "hij789": [
-        `You asked: "${question}" - This is a specific response for Merchant ${merchantName}.`,
-      ],
-      "klm012": [
-        `You asked: "${question}" - This is a specific response for Merchant ${merchantName}.`,
-      ],
+  const handleMerchantChange = (newMerchantId: string) => {
+    setMerchantId(newMerchantId);
+    // Add a system message about the merchant change
+    const systemMessage: Message = {
+      id: Date.now().toString(),
+      text: `Switched to ${newMerchantId.replace('_', ' ')}`,
+      sender: 'system',
+      timestamp: new Date()
     };
-    
-    const genericResponses = [
-      `You asked: "${question}" - In the future, I'll provide a real answer based on ${merchantName}'s data.`,
-      `This is a placeholder response for your ${merchantName} account.`,
-      `In a real implementation, this would use ${merchantName}'s data from an API.`
-    ];
-    
-    // Get merchant-specific responses or fall back to generic ones
-    const responses = merchantSpecificResponses[merchantId] || genericResponses;
-    return responses[Math.floor(Math.random() * responses.length)];
+    setMessages(prev => [...prev, systemMessage]);
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  // When merchantId changes externally
+  useEffect(() => {
+    if (initialMerchantId && initialMerchantId !== prevMerchantIdRef.current) {
+      prevMerchantIdRef.current = initialMerchantId;
+      handleMerchantChange(initialMerchantId);
+    }
+  }, [initialMerchantId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!inputValue.trim()) return;
-    
+
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputValue,
       sender: 'user',
-      timestamp: new Date(),
+      timestamp: new Date()
     };
-    
-    setMessages((prev) => [...prev, userMessage]);
+
+    setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
+
+    try {
+      // Call the API route
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          message: userMessage.text, 
+          merchantId 
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from API');
+      }
+
+      const data = await response.json();
+      
+      // Add bot message from API response
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: generateDummyResponse(userMessage.text),
+        text: data.text,
+        sender: 'bot',
+        timestamp: new Date(data.timestamp || Date.now()),
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Error getting chat response:', error);
+      
+      // Add error message
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Sorry, I couldn't process your request. Please try again.",
         sender: 'bot',
         timestamp: new Date(),
       };
       
-      setMessages((prev) => [...prev, botMessage]);
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
     <div className="flex flex-col w-full max-w-2xl h-[600px] border border-black/[.08] dark:border-white/[.145] rounded-lg overflow-hidden">
-      {/* Chat header */}
       <div className="bg-gray-100 dark:bg-gray-800 p-4 border-b border-black/[.08] dark:border-white/[.145]">
-        <h2 className="font-medium">Merchant Chat</h2>
+        <div className="flex justify-between items-center">
+          <h2 className="font-medium">Chat Assistant</h2>
+          <MerchantSelector 
+            currentMerchantId={merchantId} 
+            onMerchantChange={handleMerchantChange} 
+          />
+        </div>
       </div>
       
-      {/* Messages container */}
       <div className="flex-1 p-4 overflow-y-auto bg-white dark:bg-gray-900">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center text-gray-400">
-            <p>Ask a question to start the conversation</p>
+            <p>Start a conversation by typing a message below.</p>
           </div>
         ) : (
           messages.map((message) => (
             <div 
-              key={message.id}
-              className={`mb-4 ${
-                message.sender === 'user' 
-                  ? 'ml-auto text-right' 
-                  : 'mr-auto'
-              }`}
+              key={message.id} 
+              className={`mb-4 ${message.sender === 'user' ? 'ml-auto text-right' : 'mr-auto'}`}
             >
               <div 
                 className={`inline-block p-3 rounded-lg max-w-[80%] ${
-                  message.sender === 'user'
-                    ? 'bg-blue-500 text-white rounded-tr-none'
-                    : 'bg-gray-100 dark:bg-gray-800 rounded-tl-none'
+                  message.sender === 'user' 
+                    ? 'bg-blue-500 text-white rounded-tr-none' 
+                    : message.sender === 'system'
+                      ? 'bg-gray-300 dark:bg-gray-700 italic'
+                      : 'bg-gray-100 dark:bg-gray-800 rounded-tl-none'
                 }`}
               >
                 {message.text}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                {message.timestamp.toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
+                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
           ))
         )}
+        
         {isLoading && (
           <div className="flex items-center space-x-2 mb-4">
             <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
@@ -161,10 +153,10 @@ export default function ChatInterface({ merchantId }: ChatInterfaceProps) {
             <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce [animation-delay:0.4s]"></div>
           </div>
         )}
-        <div ref={messagesEndRef} />
+        
+        <div ref={messagesEndRef}></div>
       </div>
       
-      {/* Input form */}
       <form onSubmit={handleSubmit} className="border-t border-black/[.08] dark:border-white/[.145] p-4 bg-white dark:bg-gray-900">
         <div className="flex gap-2">
           <input
