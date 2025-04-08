@@ -9,28 +9,72 @@ type Message = {
   timestamp: Date;
 };
 
-export default function ChatInterface() {
+type ChatInterfaceProps = {
+  merchantId: string;
+};
+
+export default function ChatInterface({ merchantId }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevMerchantIdRef = useRef(merchantId);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Handle merchant change
+  useEffect(() => {
+    if (prevMerchantIdRef.current !== merchantId) {
+      // Add a system message about the merchant change
+      const systemMessage: Message = {
+        id: Date.now().toString(),
+        text: `Switched to a different merchant account (${merchantId}).`,
+        sender: 'bot',
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, systemMessage]);
+      prevMerchantIdRef.current = merchantId;
+    }
+  }, [merchantId]);
+
   // Generate dummy response
   const generateDummyResponse = (question: string): string => {
-    const dummyResponses = [
-      "I'm a simple chatbot. I can't actually answer that right now.",
-      "That's an interesting question! In a real implementation, I would call an API here.",
-      "I'm just a dummy response for now, but this is where actual API data would appear.",
-      `You asked: "${question}" - In the future, I'll provide a real answer.`,
-      "Thanks for your question! This is a placeholder response.",
+    const merchantSpecificResponses: Record<string, string[]> = {
+      merchant_1: [
+        "This is Shoe Store. How can I help you with our footwear collection?",
+        "As a Shoe Store representative, I can assist with sizing, styles, and availability.",
+        "Thank you for shopping at Shoe Store. Is there a specific brand you're looking for?"
+      ],
+      merchant_2: [
+        "This is Coffee Shop. How can I help you with our coffee and pastries?",
+        "As a Coffee Shop barista, I can tell you about our beans, brewing methods, and menu items.",
+        "Thanks for visiting Coffee Shop. Would you like to hear about today's special?"
+      ],
+      merchant_3: [
+        "This is Bookstore. How can I help you find your next great read?",
+        "As a Bookstore clerk, I can recommend titles based on your interests.",
+        "Welcome to Bookstore. Are you looking for a specific genre or author?"
+      ],
+      merchant_4: [
+        "This is Restaurant. How can I help you with our menu or reservations?",
+        "As a Restaurant host, I can tell you about our special dishes and availability.",
+        "Thank you for choosing Restaurant. Would you like to hear about our chef's recommendations?"
+      ]
+    };
+    
+    const genericResponses = [
+      `You asked: "${question}" - In the future, I'll provide a real answer based on your merchant data.`,
+      "This is a placeholder response for your merchant account.",
+      "In a real implementation, this would use your merchant's data from an API."
     ];
     
-    return dummyResponses[Math.floor(Math.random() * dummyResponses.length)];
+    // Get merchant-specific responses or fall back to generic ones
+    const responses = merchantSpecificResponses[merchantId] || genericResponses;
+    return responses[Math.floor(Math.random() * responses.length)];
   };
 
   const handleSubmit = (e: FormEvent) => {
@@ -68,7 +112,7 @@ export default function ChatInterface() {
     <div className="flex flex-col w-full max-w-2xl h-[600px] border border-black/[.08] dark:border-white/[.145] rounded-lg overflow-hidden">
       {/* Chat header */}
       <div className="bg-gray-100 dark:bg-gray-800 p-4 border-b border-black/[.08] dark:border-white/[.145]">
-        <h2 className="font-medium">Chat Assistant</h2>
+        <h2 className="font-medium">Merchant Chat</h2>
       </div>
       
       {/* Messages container */}
