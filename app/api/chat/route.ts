@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Replace with your actual API key
 const API_KEY = process.env.GEMINI_API_KEY;
 
 const getFunctionDeclarations = () => {
@@ -76,8 +75,8 @@ async function generateGeminiResponse(userInput: string) {
     if (functionCallPart?.functionCall) {
       const tool_call = functionCallPart.functionCall;
       
-      if (tool_call.name === "get_current_weather") {
-        functionResult = dummy_getCurrentWeather(tool_call.args.location, tool_call.args.unit);
+      if (tool_call.name === "get_current_weather" && tool_call.args) {
+        functionResult = dummy_getCurrentWeather(tool_call.args.location as string, tool_call.args.unit as string);
         console.log(`Function execution result: ${JSON.stringify(functionResult)}`);
         
         // Create a function response part
@@ -87,8 +86,12 @@ async function generateGeminiResponse(userInput: string) {
         };
 
         // Append function call and result of the function execution to contents
-        contents.push({ role: 'model', parts: [{ functionCall: tool_call }] });
-        contents.push({ role: 'user', parts: [{ functionResponse: function_response_part }] });
+        contents.push({ role: 'model', parts: [{ 
+          text: JSON.stringify(tool_call)
+        }] });
+        contents.push({ role: 'user', parts: [{ 
+          text: JSON.stringify(function_response_part) 
+        }] });
 
         // Get the final response from the model
         finalResponse = await genAI.models.generateContent({
