@@ -105,13 +105,7 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
   };
 
   return (
-    <div className="flex flex-col w-full max-w-2xl h-[600px] border border-black/[.08] dark:border-white/[.145] rounded-lg overflow-hidden">
-      <div className="bg-gray-100 dark:bg-gray-800 p-4 border-b border-black/[.08] dark:border-white/[.145]">
-        <div className="flex justify-between items-center">
-          <h2 className="font-medium">Chat Assistant</h2>
-        </div>
-      </div>
-      
+    <div className="flex flex-col w-full h-full rounded-lg overflow-hidden">
       <div className="flex-1 p-4 overflow-y-auto bg-white dark:bg-gray-900">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center text-gray-400">
@@ -152,7 +146,7 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
         <div ref={messagesEndRef}></div>
       </div>
       
-      <form onSubmit={handleSubmit} className="border-t border-black/[.08] dark:border-white/[.145] p-4 bg-white dark:bg-gray-900">
+      <form onSubmit={handleSubmit} className="border-t border-black/[.08] dark:border-white/[.145] p-2 bg-white dark:bg-gray-900">
         <div className="flex gap-2">
           <input
             type="text"
@@ -164,7 +158,7 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
           <button
             type="submit"
             disabled={isLoading || !inputValue.trim()}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Send
           </button>
