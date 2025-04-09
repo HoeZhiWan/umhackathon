@@ -13,7 +13,7 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [merchantId, setMerchantId] = useState(initialMerchantId || "merchant_1"); // Default merchant
+  const [merchantId, setMerchantId] = useState(initialMerchantId || "abc123"); // Default merchant
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMerchantIdRef = useRef(merchantId);
 
