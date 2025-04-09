@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 // Initialize the Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
  * Get the highest order_value from the transaction_data table along with its order_id
@@ -19,8 +19,7 @@ export async function getHighestOrderValue(): Promise<{
       .from('transaction_data')
       .select('order_value, order_id')
       .order('order_value', { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
     
     if (error) {
       console.error('SQL query error:', error);
@@ -28,8 +27,8 @@ export async function getHighestOrderValue(): Promise<{
     }
     
     return {
-      value: data ? data.order_value : null,
-      orderId: data ? data.order_id : null,
+      value: data && data.length > 0 ? data[0].order_value : null,
+      orderId: data && data.length > 0 ? data[0].order_id : null,
       error: null
     };
   } catch (error) {
