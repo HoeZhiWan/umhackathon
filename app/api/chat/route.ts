@@ -45,16 +45,18 @@ function dummy_getCurrentWeather(location: string, unit: string = 'Celsius') {
   };
 }
 
-async function generateGeminiResponse(userInput: string) {
+async function generateGeminiResponse(userInput: string, conversationHistory = []) {
   try {
     const genAI = new GoogleGenAI({apiKey: API_KEY});
 
-    const contents = [
-      {
-        role: 'user',
-        parts: [{ text: userInput }]
-      }
-    ];
+    // Create a new message for the current user input
+    const newUserMessage = {
+      role: 'user',
+      parts: [{ text: userInput }]
+    };
+    
+    // Combine existing conversation history with new user message
+    const contents = [...conversationHistory, newUserMessage];
 
     const response = await genAI.models.generateContent({
       model: 'gemini-2.0-flash',
@@ -71,6 +73,7 @@ async function generateGeminiResponse(userInput: string) {
     
     let functionResult = null;
     let finalResponse = response;
+    let updatedHistory = [...contents]; // Start with existing history plus new user message
     
     if (functionCallPart?.functionCall) {
       const tool_call = functionCallPart.functionCall;
@@ -85,18 +88,26 @@ async function generateGeminiResponse(userInput: string) {
           response: { result: functionResult }
         };
 
-        // Append function call and result of the function execution to contents
-        contents.push({ role: 'model', parts: [{ 
-          text: JSON.stringify(tool_call)
-        }] });
-        contents.push({ role: 'user', parts: [{ 
-          text: JSON.stringify(function_response_part) 
-        }] });
+        // Model message with the function call
+        const modelFunctionCallMessage = { 
+          role: 'model', 
+          parts: [{ text: JSON.stringify(tool_call) }] 
+        };
+        
+        // User message with function response
+        const userFunctionResponseMessage = { 
+          role: 'user', 
+          parts: [{ text: JSON.stringify(function_response_part) }] 
+        };
+
+        // Add these to the conversation
+        updatedHistory.push(modelFunctionCallMessage);
+        updatedHistory.push(userFunctionResponseMessage);
 
         // Get the final response from the model
         finalResponse = await genAI.models.generateContent({
           model: 'gemini-2.0-flash',
-          contents: contents,
+          contents: updatedHistory,
           config: config
         });
         
@@ -117,11 +128,21 @@ async function generateGeminiResponse(userInput: string) {
       }
     }
 
+    // Add the model's final response to history
+    const modelResponseMessage = {
+      role: 'model',
+      parts: responseWithResult.map(part => ({
+        text: part.text || JSON.stringify(part)
+      }))
+    };
+    updatedHistory.push(modelResponseMessage);
+
     return {
       type: 'text',
       message: textResponse,
       functionResult: functionResult,
-      parts: responseWithResult
+      parts: responseWithResult,
+      history: updatedHistory // Return the updated conversation history
     };
 
   } catch (error) {
@@ -132,9 +153,9 @@ async function generateGeminiResponse(userInput: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, merchantId } = await request.json();
+    const { message, merchantId, history = [] } = await request.json();
 
-    const aiResponse = await generateGeminiResponse(message);
+    const aiResponse = await generateGeminiResponse(message, history);
 
     console.log('AI Response:', aiResponse);
 
@@ -143,6 +164,7 @@ export async function POST(request: NextRequest) {
         type: 'text', 
         message: aiResponse.message,
         functionResult: aiResponse.functionResult,
+        history: aiResponse.history, // Send the updated history back to the client
         timestamp: new Date().toISOString()
       });
 
@@ -152,6 +174,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       type: 'text',
       message: `You asked: "${message}" - I'm not sure how to help with that.`,
+      history: [...history, { role: 'user', parts: [{ text: message }] }], // Include at least the user message
       timestamp: new Date().toISOString()
     });
 

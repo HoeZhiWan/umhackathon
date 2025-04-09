@@ -9,6 +9,12 @@ interface Message {
   timestamp: Date;
 }
 
+// Define interface for Gemini's conversation format
+interface GeminiMessage {
+  role: 'user' | 'model';
+  parts: { text: string }[];
+}
+
 export default function ChatInterface({ merchantId: initialMerchantId }: { merchantId?: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -16,6 +22,7 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
   const [merchantId, setMerchantId] = useState(initialMerchantId || "abc123"); // Default merchant
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMerchantIdRef = useRef(merchantId);
+  const [conversationHistory, setConversationHistory] = useState<GeminiMessage[]>([]);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -33,6 +40,8 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
       timestamp: new Date()
     };
     setMessages(prev => [...prev, systemMessage]);
+    // Reset conversation history when merchant changes
+    setConversationHistory([]);
   };
 
   // When merchantId changes externally
@@ -60,7 +69,7 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
     setIsLoading(true);
 
     try {
-      // Call the API route
+      // Call the API route with conversation history
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -68,7 +77,8 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
         },
         body: JSON.stringify({ 
           message: userMessage.text, 
-          merchantId 
+          merchantId,
+          history: conversationHistory // Send the current conversation history
         }),
       });
 
@@ -89,6 +99,11 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
       };
 
       setMessages(prev => [...prev, botMessage]);
+      
+      // Update conversation history from the response
+      if (data.history) {
+        setConversationHistory(data.history);
+      }
     } catch (error) {
       console.error('Error getting chat response:', error);
       
