@@ -77,11 +77,13 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
       }
 
       const data = await response.json();
+
+      console.log('API Response data:', data);
       
       // Add bot message from API response
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.text,
+        text: data.message || "I don't have a response for that.",
         sender: 'bot',
         timestamp: new Date(data.timestamp || Date.now()),
       };
@@ -150,7 +152,7 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
         <div ref={messagesEndRef}></div>
       </div>
       
-      <form onSubmit={handleSubmit} className="border-t p-2" style={{ backgroundColor: "var(--color-window)", borderColor: "var(--secondary)" }}>
+      <form onSubmit={handleSubmit} className="border-t p-2" style={{ backgroundColor: "var(--light)", borderColor: "var(--secondary)" }}>
         <div className="flex gap-2">
           <input
             type="text"
@@ -164,7 +166,7 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
             type="submit"
             disabled={isLoading || !inputValue.trim()}
             className="px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            style={{ backgroundColor: "var(--light)", color: "var(--dark)" }}
+            style={{ backgroundColor: "var(--primary)", color: "var(--light)" }}
           >
             Send
           </button>

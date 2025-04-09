@@ -17,8 +17,8 @@ export default function ChatPage() {
   
   // State to manage data windows
   const [dataWindows, setDataWindows] = useState<Window[]>([
-    { id: "window1", type: "chart", title: "Sales Performance" },
-    { id: "window2", type: "graph", title: "Customer Demographics" }
+    // { id: "window1", type: "chart", title: "Sales Performance" },
+    // { id: "window2", type: "graph", title: "Customer Demographics" }
   ]);
 
   // Function to add a new data window

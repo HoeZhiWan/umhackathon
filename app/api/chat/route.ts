@@ -1,110 +1,129 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Type } from '@google/genai';
+import { GoogleGenAI, Type } from "@google/genai";
 
-// Predefined questions mapping
-const PREDEFINED_QUESTIONS: Record<string, string> = {
-  "top selling": "get_top_selling_items",
-  "best-selling day": "get_best_selling_day",
-  "cities do most": "get_top_order_cities",
-  "cuisine type is the most popular": "get_popular_cuisine",
-  "average order count": "get_average_order_count",
-  "compare to similar merchants": "compare_with_similar_merchants",
-  "time should i promote": "get_promotion_times",
-  "show me my weekly": "get_selling_report",
-  "show me my monthly": "get_selling_report",
-  "slowest moving items": "get_slow_moving_items",
-  "alerts or problems": "get_alerts",
-  "how long does it usually take": "get_driver_arrival_time",
-};
+// Replace with your actual API key
+const API_KEY = process.env.GEMINI_API_KEY;
 
-// Mock response data for each function
-const functionResponses: Record<string, string> = {
-  'get_top_selling_items': 'Your top selling items are Chicken Wings, Burgers, and Fries.',
-  'get_best_selling_day': 'Your best-selling day is Friday, followed by Saturday.',
-  'get_top_order_cities': 'Most of your orders come from Downtown, Midtown, and Uptown areas.',
-  'get_popular_cuisine': 'American cuisine is your most popular cuisine type.',
-  'get_average_order_count': 'You receive an average of 75 orders per day.',
-  'compare_with_similar_merchants': 'Your sales are 15% higher than similar merchants in your area.',
-  'get_promotion_times': 'The best time for promotions is between 5PM and 7PM on weekdays.',
-  'get_selling_report': 'Your weekly sales show a 10% increase compared to last week.',
-  'get_slow_moving_items': 'Your slowest moving items are Salads and Vegetarian options.',
-  'get_alerts': 'There are no critical alerts at this time.',
-  'get_driver_arrival_time': 'Drivers usually take 12-15 minutes to arrive at your location.',
-  'no_match_found': 'I don\'t understand that question. Could you please rephrase it?'
-};
-
-async function generateGeminiResponse(userInput: string): Promise<string> {
-  try {
-    // Initialize the Gemini AI client
-    const genAI = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY || ''});
-    
-    // Define the function declaration for question intent matching
-    const matchQuestionDeclaration: FunctionDeclaration = {
-      name: 'matchQuestion',
+const getFunctionDeclarations = () => {
+  return [
+    {
+      name: 'get_current_weather',
+      description: 'Returns the current weather in a specified location',
       parameters: {
         type: Type.OBJECT,
-        description: 'Match user question to a predefined function',
         properties: {
-          functionName: {
+          location: {
             type: Type.STRING,
-            description: 'The function name that matches the user intent from predefined questions, or "no_match_found" if no match',
-            enum: [...Object.values(PREDEFINED_QUESTIONS), 'no_match_found']
+            description: 'The location to get the weather for'
+          },
+          unit: {
+            type: Type.STRING,
+            enum: ['Celsius', 'Fahrenheit'],
+            description: 'The unit of temperature'
           }
         },
-        required: ['functionName'],
-      },
-    };
-    
-    // Generate content with function calling
+        required: ['location']
+      }
+    },
+  ];
+}
+
+const config = {
+  tools: [{
+    functionDeclarations: getFunctionDeclarations()
+  }]
+};
+
+// Add this dummy weather function
+function dummy_getCurrentWeather(location: string, unit: string = 'Celsius') {
+  // This is a dummy implementation
+  return {
+    location,
+    temperature: unit === 'Celsius' ? 22 : 72,
+    unit: unit || 'Celsius',
+    description: 'Sunny',
+    humidity: '65%'
+  };
+}
+
+async function generateGeminiResponse(userInput: string) {
+  try {
+    const genAI = new GoogleGenAI({apiKey: API_KEY});
+
+    const contents = [
+      {
+        role: 'user',
+        parts: [{ text: userInput }]
+      }
+    ];
+
     const response = await genAI.models.generateContent({
       model: 'gemini-2.0-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            {
-              text: `You are an assistant for a food delivery analytics system. Your job is to:
-1. Look at the user's question
-2. Compare it against the predefined questions I've given you
-3. Identify which predefined question pattern matches the user's intent best
-4. Return the function name that corresponds to the matching predefined question
-5. If no match is found, respond with "no_match_found"
-
-User question: ${userInput}
-
-Predefined questions and their functions: ${JSON.stringify(PREDEFINED_QUESTIONS)}`
-            }
-          ]
-        }
-      ],
-      config: {
-        toolConfig: {
-          functionCallingConfig: {
-            mode: FunctionCallingConfigMode.ANY,
-            allowedFunctionNames: ['matchQuestion'],
-          }
-        },
-        tools: [{functionDeclarations: [matchQuestionDeclaration]}]
-      }
+      contents: contents,
+      config: config
     });
+
+    console.log('Response:', response);
+
+    // Find the function call part if it exists
+    const functionCallPart = response.candidates?.[0]?.content?.parts?.find(
+      part => part.functionCall
+    );
     
-    // Process the function call response
-    if (response.functionCalls && response.functionCalls.length > 0) {
-      const functionCall = response.functionCalls[0];
-      const functionArgs = functionCall.args;
+    let functionResult = null;
+    let finalResponse = response;
+    
+    if (functionCallPart?.functionCall) {
+      const tool_call = functionCallPart.functionCall;
       
-      if (functionArgs && 'functionName' in functionArgs) {
-        const functionName = functionArgs.functionName as string;
+      if (tool_call.name === "get_current_weather") {
+        functionResult = dummy_getCurrentWeather(tool_call.args.location, tool_call.args.unit);
+        console.log(`Function execution result: ${JSON.stringify(functionResult)}`);
         
-        // Return the corresponding response for the function
-        return functionResponses[functionName] || functionResponses['no_match_found'];
+        // Create a function response part
+        const function_response_part = {
+          name: tool_call.name,
+          response: { result: functionResult }
+        };
+
+        // Append function call and result of the function execution to contents
+        contents.push({ role: 'model', parts: [{ functionCall: tool_call }] });
+        contents.push({ role: 'user', parts: [{ functionResponse: function_response_part }] });
+
+        // Get the final response from the model
+        finalResponse = await genAI.models.generateContent({
+          model: 'gemini-2.0-flash',
+          contents: contents,
+          config: config
+        });
+        
+        console.log("Final response after function call:", finalResponse.candidates?.[0]?.content?.parts);
       }
     }
     
-    return functionResponses['no_match_found'];
+    // Include the function result in the response
+    const responseWithResult = finalResponse.candidates?.[0]?.content?.parts || [];
+    
+    // Extract the text from the parts
+    let textResponse = "";
+    if (Array.isArray(responseWithResult)) {
+      for (const part of responseWithResult) {
+        if (part.text) {
+          textResponse += part.text;
+        }
+      }
+    }
+
+    return {
+      type: 'text',
+      message: textResponse,
+      functionResult: functionResult,
+      parts: responseWithResult
+    };
+
   } catch (error) {
-    console.error('Error calling Gemini AI:', error);
-    return 'Sorry, I encountered an error processing your request.';
+    console.error('Error generating response:', error);
+    return null;
   }
 }
 
@@ -113,29 +132,26 @@ export async function POST(request: NextRequest) {
     const { message, merchantId } = await request.json();
 
     const aiResponse = await generateGeminiResponse(message);
-    
+
+    console.log('AI Response:', aiResponse);
+
     if (aiResponse) {
-      return NextResponse.json({ 
-        text: aiResponse,
+      const response = NextResponse.json({
+        type: 'text', 
+        message: aiResponse.message,
+        functionResult: aiResponse.functionResult,
         timestamp: new Date().toISOString()
       });
+
+      return response;
     }
 
-    console.log(aiResponse);
-    
-    // Fall back to the original logic if Gemini doesn't provide a response
-    const genericResponses = [
-      `You asked: "${message}" - This is a response from our API route.`,
-      "This response is coming from the API route based on your merchant data.",
-      "In a real implementation, this would connect to a backend service or AI provider."
-    ];
-    
-    const responseText = genericResponses[Math.floor(Math.random() * genericResponses.length)];
-    
-    return NextResponse.json({ 
-      text: responseText,
+    return NextResponse.json({
+      type: 'text',
+      message: `You asked: "${message}" - I'm not sure how to help with that.`,
       timestamp: new Date().toISOString()
     });
+
   } catch (error) {
     console.error('Error processing chat request:', error);
     return NextResponse.json(
