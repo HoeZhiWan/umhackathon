@@ -105,10 +105,10 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
   };
 
   return (
-    <div className="flex flex-col w-full h-full rounded-lg overflow-hidden">
-      <div className="flex-1 p-4 overflow-y-auto bg-white dark:bg-gray-900">
+    <div className="flex flex-col w-full h-full rounded-lg overflow-hidden" style={{ backgroundColor: "var(--color-window)" }}>
+      <div className="flex-1 p-4 overflow-y-auto" style={{ backgroundColor: "var(--color-window)", color: "var(--foreground)" }}>
         {messages.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-gray-400">
+          <div className="h-full flex items-center justify-center text-secondary">
             <p>Start a conversation by typing a message below.</p>
           </div>
         ) : (
@@ -120,15 +120,19 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
               <div 
                 className={`inline-block p-3 rounded-lg max-w-[80%] ${
                   message.sender === 'user' 
-                    ? 'bg-blue-500 text-white rounded-tr-none' 
+                    ? 'rounded-tr-none' 
                     : message.sender === 'system'
-                      ? 'bg-gray-300 dark:bg-gray-700 italic'
-                      : 'bg-gray-100 dark:bg-gray-800 rounded-tl-none'
+                      ? 'italic'
+                      : 'rounded-tl-none'
                 }`}
+                style={{
+                  backgroundColor: message.sender === 'user' ? "var(--secondary)" : "var(--light)",
+                  color: message.sender === 'user' ? "var(--light)" : "var(--dark)"
+                }}
               >
                 {message.text}
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-xs mt-1" style={{ color: "var(--light)" }}>
                 {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
@@ -137,28 +141,30 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
         
         {isLoading && (
           <div className="flex items-center space-x-2 mb-4">
-            <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
-            <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce [animation-delay:0.2s]"></div>
-            <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce [animation-delay:0.4s]"></div>
+            <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: "var(--light)" }}></div>
+            <div className="w-2 h-2 rounded-full animate-bounce [animation-delay:0.2s]" style={{ backgroundColor: "var(--light)" }}></div>
+            <div className="w-2 h-2 rounded-full animate-bounce [animation-delay:0.4s]" style={{ backgroundColor: "var(--light)" }}></div>
           </div>
         )}
         
         <div ref={messagesEndRef}></div>
       </div>
       
-      <form onSubmit={handleSubmit} className="border-t border-black/[.08] dark:border-white/[.145] p-2 bg-white dark:bg-gray-900">
+      <form onSubmit={handleSubmit} className="border-t p-2" style={{ backgroundColor: "var(--color-window)", borderColor: "var(--secondary)" }}>
         <div className="flex gap-2">
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Type your message..."
-            className="flex-1 p-2 border border-black/[.08] dark:border-white/[.145] rounded-md bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 p-2 border rounded-md bg-transparent focus:outline-none focus:ring-2"
+            style={{ borderColor: "var(--secondary)", color: "var(--foreground)" }}
           />
           <button
             type="submit"
             disabled={isLoading || !inputValue.trim()}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            style={{ backgroundColor: "var(--light)", color: "var(--dark)" }}
           >
             Send
           </button>

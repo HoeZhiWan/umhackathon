@@ -121,7 +121,8 @@ export default function ChatPage() {
             <button 
               onClick={() => addDataWindow('chart')} 
               disabled={dataWindows.length >= 5}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: "var(--info)" }}
               title="Add Chart"
             >
               + Chart
@@ -129,7 +130,8 @@ export default function ChatPage() {
             <button 
               onClick={() => addDataWindow('graph')} 
               disabled={dataWindows.length >= 5}
-              className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: "var(--info)" }}
               title="Add Graph"
             >
               + Graph
@@ -137,7 +139,8 @@ export default function ChatPage() {
             <button 
               onClick={() => addDataWindow('stats')} 
               disabled={dataWindows.length >= 5}
-              className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: "var(--info)" }}
               title="Add Stats"
             >
               + Stats
@@ -148,8 +151,8 @@ export default function ChatPage() {
 
       <div className={`grid ${gridClass} gap-4 w-full max-w-6xl h-[calc(100vh-120px)]`}>
         {/* Chat window is always in the center (when there are enough windows) */}
-        <div className={`border border-black/[.08] dark:border-white/[.145] rounded-lg overflow-hidden h-full ${chatArea}`}>
-          <div className="bg-gray-100 dark:bg-gray-800 p-2 border-b border-black/[.08] dark:border-white/[.145] flex items-center">
+        <div className={`border border-secondary rounded-lg overflow-hidden h-full ${chatArea}`}>
+          <div className="p-2 border-b border-secondary flex items-center">
             <span className="font-medium">Chat Assistant</span>
           </div>
           <div className="h-[calc(100%-2.5rem)]">
@@ -161,20 +164,25 @@ export default function ChatPage() {
         {dataWindows.map((window, index) => (
           <div 
             key={window.id} 
-            className={`border border-black/[.08] dark:border-white/[.145] rounded-lg overflow-hidden ${dataAreas[index] || ""}`}
+            className={`border border-secondary rounded-lg overflow-hidden ${dataAreas[index] || ""}`}
           >
-            <div className="bg-gray-100 dark:bg-gray-800 p-2 border-b border-black/[.08] dark:border-white/[.145] flex justify-between items-center">
+            <div 
+              className="p-2 border-b border-secondary flex justify-between items-center"
+              style={{ backgroundColor: "var(--light)", color: "var(--foreground)" }}
+            >
               <span className="font-medium">{window.title}</span>
               <button 
                 onClick={() => removeDataWindow(window.id)} 
-                className="text-red-500 hover:text-red-700"
+                className="text-danger hover:text-red-700"
                 title="Remove Window"
               >
                 ✕
               </button>
             </div>
-            <div className="p-4">
-              {/* Placeholder content for the data window */}
+            <div 
+              className="p-4 h-full"
+              style={{ backgroundColor: "var(--color-window)", color: "var(--foreground)" }}
+            >
               <p>Content for {window.type} window</p>
             </div> 
           </div>

@@ -27,10 +27,14 @@ export default function MerchantSelector({
     <select
       value={currentMerchantId}
       onChange={(e) => onMerchantChange(e.target.value)}
-      className={`border border-black/[.08] dark:border-white/[.145] rounded-md bg-white dark:bg-gray-800 p-2 ${
+      className={`border border-black/[.08] dark:border-white/[.145] rounded-md p-2 ${
         compact ? 'text-xs' : 'text-sm'
       }`}
-      style={compact ? { maxWidth: '120px' } : undefined}
+      style={{
+        backgroundColor: "var(--color-window)", 
+        color: "var(--foreground)", 
+        ...(compact ? { maxWidth: '120px' } : {})
+      }}
     >
       {merchants.map((merchant) => (
         <option key={merchant.id} value={merchant.id}>
