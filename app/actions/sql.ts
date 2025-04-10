@@ -9,34 +9,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
  * Get the highest order_value from the transaction_data table along with its order_id
  * @returns The highest order_value, order_id or null if not found
  */
-export async function getHighestOrderValue(): Promise<{ 
-  value: number | null; 
-  orderId: string | null;
-  error: Error | null 
-}> {
-  try {
-    const { data, error } = await supabase
-      .from('transaction_data')
-      .select('order_value, order_id')
-      .order('order_value', { ascending: false })
-      .limit(1)
-      .single();
-    
-    if (error) {
-      console.error('SQL query error:', error);
-      return { value: null, orderId: null, error };
-    }
-    
-    return {
-      value: data && data.length > 0 ? data[0].order_value : null,
-      orderId: data && data.length > 0 ? data[0].order_id : null,
-      error: null
-    };
-  } catch (error) {
-    console.error('Failed to execute SQL query:', error);
-    return { value: null, orderId: null, error: error as Error };
-  }
-}
 
 export async function topSellingItemsWeek(merchantId: string): Promise<{ 
   topSellingItem: string | null;
@@ -139,7 +111,7 @@ export async function topSellingItemsMonth(merchantId: string): Promise<{
     const orderIds = orders.map(order => order.order_id);
 
     if (orderIds.length === 0) {
-      console.log('No orders found in this week.');
+      console.log('No orders found in this month.');
       return { topSellingItem:null, error:errorOrder};
     }
     
@@ -192,5 +164,68 @@ export async function topSellingItemsMonth(merchantId: string): Promise<{
     console.error('Failed to execute SQL query:', error);
     return { topSellingItem:null, error: error as Error };
   }
-  //hheheh
+}
+
+export async function bestSellingTime(merchantId: string): Promise<{ 
+  bestSellingTime: string | null; 
+  error: Error | null; 
+}> {
+  const startDate = '2023-12-01T00:00:00';
+  const endDate = '2023-12-31T23:59:59';
+
+  try {
+    // Fetch transaction data for the merchant within the specified date range
+    const { data: transactions, error: transactionError } = await supabase
+      .from('transaction_data')
+      .select('order_id, order_time')
+      .eq('merchant_id', merchantId)
+      .gte('order_time', startDate)
+      .lte('order_time', endDate);
+
+    if (transactionError) {
+      console.error('Error fetching transaction data:', transactionError);
+      return { bestSellingTime: null, error: transactionError };
+    }
+
+    if (!transactions || transactions.length === 0) {
+      console.log('No transactions found for the specified period.');
+      return { bestSellingTime: null, error: null };
+    }
+
+    // Fetch transaction items and merge with transaction data
+    const orderIds = transactions.map(transaction => transaction.order_id);
+    const { data: items, error: itemsError } = await supabase
+      .from('transaction_items')
+      .select('order_id, item_id')
+      .in('order_id', orderIds);
+
+    if (itemsError) {
+      console.error('Error fetching transaction items:', itemsError);
+      return { bestSellingTime: null, error: itemsError };
+    }
+
+    // Merge transactions with items
+    const mergedData = transactions.map(transaction => ({
+      ...transaction,
+      item_id: items.find(item => item.order_id === transaction.order_id)?.item_id || null,
+    }));
+
+    // Extract the hour from order_time and count occurrences
+    const hourCounts: Record<string, number> = {};
+    mergedData.forEach(data => {
+      const orderHour = new Date(data.order_time).getHours();
+      const hourKey = `${orderHour.toString().padStart(2, '0')}:00:00`;
+      hourCounts[hourKey] = (hourCounts[hourKey] || 0) + 1;
+    });
+
+    // Find the hour with the highest count
+    const bestHour = Object.entries(hourCounts).reduce((max, current) => 
+      current[1] > max[1] ? current : max, ['', 0]
+    )[0];
+
+    return { bestSellingTime: bestHour || null, error: null };
+  } catch (error) {
+    console.error('Failed to calculate best selling time:', error);
+    return { bestSellingTime: null, error: error as Error };
+  }
 }
