@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { ConversationMessage, GeminiResponse } from "./types";
-import { dummy_getCurrentWeather, dummy_getWeatherForecast, display_data_window } from "./functions";
+import { dummy_getCurrentWeather, dummy_getWeatherForecast, display_data_window, get_top_selling_items } from "./functions";
 import { getGeminiConfig, MODEL_NAME } from "./config";
 import { generateSuggestions } from "./suggestion-generator";
 
@@ -38,8 +38,12 @@ async function handleToolCall(
       tool_call.args.title as string
     );
     console.log(`Display data window function execution result: ${JSON.stringify(functionResult)}`);
-    
-    // No need to modify the function result - it already contains the structured clientAction
+  }
+  else if (tool_call.name === "get_top_selling_items" && tool_call.args) {
+    functionResult = await get_top_selling_items(
+      tool_call.args.time_period as 'week' | 'month'
+    );
+    console.log(`Top selling items function execution result: ${JSON.stringify(functionResult)}`);
   }
   else {
     // Return null if it's an unrecognized function

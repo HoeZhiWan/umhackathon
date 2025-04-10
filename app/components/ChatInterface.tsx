@@ -10,7 +10,7 @@ import { Message } from '../types/chat';
 
 interface ChatInterfaceProps {
   merchantId: string;
-  onAddDataWindow?: (type: 'chart' | 'graph' | 'stats', title?: string) => string | undefined;
+  onAddDataWindow?: (type: 'chart' | 'graph' | 'stats', title?: string, providedId?: string) => string | undefined;
 }
 
 export default function ChatInterface({ merchantId, onAddDataWindow }: ChatInterfaceProps) {

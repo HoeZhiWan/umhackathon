@@ -1,3 +1,6 @@
+import { topSellingItemsWeek, topSellingItemsMonth } from '../actions/sql';
+import { getCurrentMerchant } from '../lib/merchant-store';
+
 // Dummy weather function implementation
 export function dummy_getCurrentWeather(location: string, unit: string = 'Celsius') {
   return {
@@ -40,6 +43,63 @@ export function dummy_getWeatherForecast(location: string, days: number = 3, uni
     forecast,
     unit: unit || 'Celsius'
   };
+}
+
+// Function to get top selling items
+export async function get_top_selling_items(time_period: 'week' | 'month') {
+  try {
+    // Get the merchant ID automatically from the store
+    const { merchantId, merchantName } = getCurrentMerchant();
+    
+    let result;
+    
+    if (time_period === 'week') {
+      result = await topSellingItemsWeek(merchantId);
+    } else if (time_period === 'month') {
+      result = await topSellingItemsMonth(merchantId);
+    } else {
+      return {
+        success: false,
+        error: 'Invalid time period. Please use "week" or "month".',
+        item: null
+      };
+    }
+
+    if (result.error) {
+      return {
+        success: false,
+        error: `Error retrieving top selling item: ${result.error.message}`,
+        item: null
+      };
+    }
+
+    return {
+      success: true,
+      time_period,
+      merchant_name: merchantName, // Send the name instead of ID to Gemini
+      item: result.topSellingItem || 'No data available',
+      clientAction: {
+        type: "ADD_DATA_WINDOW",
+        params: {
+          visualization_type: 'stats',
+          title: `${merchantName}'s Top Selling Item (${time_period})`,
+          id: `top-selling-${time_period}-${Date.now()}`,
+          data: {
+            topItem: result.topSellingItem || 'No data available',
+            period: time_period,
+            merchant: merchantName
+          }
+        }
+      }
+    };
+  } catch (error) {
+    console.error('Error in get_top_selling_items:', error);
+    return {
+      success: false,
+      error: 'Failed to retrieve top selling item',
+      item: null
+    };
+  }
 }
 
 // Function to display data visualization windows

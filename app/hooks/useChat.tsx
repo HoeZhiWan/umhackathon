@@ -3,10 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { Message, GeminiMessage, FunctionResult } from '../types/chat';
 import { getMerchantSuggestions } from '../gemini/suggestion-generator';
+import { merchants } from '../components/MerchantSelector';
 
 interface UseChatProps {
   initialMerchantId: string;
-  onAddDataWindow?: (type: 'chart' | 'graph' | 'stats', title?: string) => string | undefined;
+  onAddDataWindow?: (type: 'chart' | 'graph' | 'stats', title?: string, providedId?: string) => string | undefined;
 }
 
 export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
@@ -33,14 +34,19 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
   const handleMerchantChange = (newMerchantId: string) => {
     setMerchantId(newMerchantId);
     
-    // Add a system message about the merchant change
+    // Find the merchant name from the ID
+    const merchantName = merchants.find(m => m.id === newMerchantId)?.name || newMerchantId;
+    
+    // Add a system message about the merchant change with the name instead of ID
     const systemMessage: Message = {
       id: Date.now().toString(),
-      text: `Switched to ${newMerchantId.replace('_', ' ')}`,
+      text: `Switched to ${merchantName}`,
       sender: 'system',
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-    setMessages(prev => [...prev, systemMessage]);
+    
+    setMessages((prev) => [...prev, systemMessage]);
+    
     // Reset conversation history and get new merchant-specific suggestions
     setConversationHistory([]);
     setSuggestedPrompts(getMerchantSuggestions(newMerchantId));
@@ -142,40 +148,56 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
   // Process function results that require client-side execution
   useEffect(() => {
     const handleClientActions = (message: any) => {
-      if (message.functionResults && Array.isArray(message.functionResults)) {
-        message.functionResults.forEach((result: FunctionResult) => {
-          // Use the server-generated ID if available, otherwise create a fallback
-          const resultId = result.id || 
-                          `fallback-${result.window_type || ''}-${result.clientAction?.params?.title || ''}-${Date.now()}`;
-          
-          // Skip if we've already processed this result
-          if (processedResultsRef.current.has(resultId)) {
-            return;
-          }
-          
-          if (result.clientAction) {
-            // Process the client action based on its type
-            switch (result.clientAction.type) {
-              case "ADD_DATA_WINDOW":
-                if (onAddDataWindow && result.clientAction.params) {
-                  const { visualization_type, title } = result.clientAction.params;
-                  onAddDataWindow(
-                    visualization_type, 
-                    title
-                  );
-                  
-                  // Mark this result as processed
-                  processedResultsRef.current.add(resultId);
-                  console.log("Processed result ID:", resultId);
-                }
-                break;
-              // Add additional action types here as needed
-              default:
-                console.log("Unknown client action type:", result.clientAction.type);
+      if (!message.functionResults || !Array.isArray(message.functionResults)) return;
+      
+      console.log('Processing function results:', message.functionResults);
+      
+      message.functionResults.forEach((result: FunctionResult) => {
+        // Only process results that have clientAction
+        if (!result.clientAction) return;
+        
+        // Generate a stable ID that we can use consistently
+        const stableId = result.clientAction.params?.id || result.id;
+        
+        // Skip if no ID is available
+        if (!stableId) {
+          console.log('Skipping result without ID:', result);
+          return;
+        }
+        
+        // Skip if we've already processed this result
+        if (processedResultsRef.current.has(stableId)) {
+          console.log('Already processed result ID:', stableId);
+          return;
+        }
+        
+        // Process the client action based on its type
+        switch (result.clientAction.type) {
+          case "ADD_DATA_WINDOW":
+            if (onAddDataWindow && result.clientAction.params) {
+              const { visualization_type, title, id } = result.clientAction.params;
+              
+              // Only proceed if we have an ID
+              if (id) {
+                console.log('Adding data window with ID:', id);
+                onAddDataWindow(
+                  visualization_type, 
+                  title,
+                  id // Pass the ID provided from the API response
+                );
+                
+                // Mark this result as processed using the stable ID
+                processedResultsRef.current.add(stableId);
+              } else {
+                console.log('Skipping data window without ID');
+              }
             }
-          }
-        });
-      }
+            break;
+          // Add additional action types here as needed
+          default:
+            console.log("Unknown client action type:", result.clientAction.type);
+        }
+      });
     };
 
     // Apply this to the latest message if it exists
