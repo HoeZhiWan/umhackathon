@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { supabase } from "../actions/sql";
-import { topSellingItemsWeek, topSellingItemsMonth } from "../actions/sql"
+import { topSellingItemsWeek, topSellingItemsMonth, bestSellingTime } from "../actions/sql"
 
 export default function SqlPage() {
     const [weeklyItems, setWeeklyItems] = useState<Array<{ name: string; count: number }> | null>(null);
     const [monthlyItems, setMonthlyItems] = useState<Array<{ name: string; count: number }> | null>(null);
+    const [bestTime, setBestTime] = useState<string | null>(null);
     const [isWeeklyLoading, setIsWeeklyLoading] = useState(false);
     const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
+    const [isTimeLoading, setIsTimeLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
     // Using the same merchant ID for consistency in testing
@@ -52,12 +54,31 @@ export default function SqlPage() {
         }
     };
 
+    const fetchBestSellingTime = async () => {
+        setIsTimeLoading(true);
+        setError(null);
+        try {
+            const result = await bestSellingTime(merchantId);
+            console.log('Best selling time result:', result);
+            if (result.error) {
+                setError(`Error fetching best selling time: ${result.error.message}`);
+            } else {
+                setBestTime(result.bestSellingTime);
+            }
+        } catch (err) {
+            console.error('Error fetching best selling time:', err);
+            setError(`Unexpected error: ${(err as Error).message}`);
+        } finally {
+            setIsTimeLoading(false);
+        }
+    };
+
     return (
         <div className="p-6 max-w-4xl mx-auto">
             <h1 className="text-2xl font-bold mb-6">SQL Testing Page</h1>
             <p className="mb-4">Testing merchant ID: <code className="bg-gray-100 px-2 py-1 rounded">{merchantId}</code></p>
             
-            <div className="flex gap-4 mb-8">
+            <div className="flex flex-wrap gap-4 mb-8">
                 <button 
                     onClick={fetchWeeklyItems}
                     disabled={isWeeklyLoading} 
@@ -73,6 +94,14 @@ export default function SqlPage() {
                 >
                     {isMonthlyLoading ? 'Loading...' : 'Top Selling Items in The Month'}
                 </button>
+
+                <button 
+                    onClick={fetchBestSellingTime}
+                    disabled={isTimeLoading}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 disabled:opacity-50"
+                >
+                    {isTimeLoading ? 'Loading...' : 'Best Selling Time of Day'}
+                </button>
             </div>
 
             {error && (
@@ -81,7 +110,7 @@ export default function SqlPage() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 {/* Weekly Results */}
                 <div className="bg-gray-50 p-4 rounded shadow">
                     <h2 className="text-lg font-semibold mb-3">Weekly Top Items</h2>
@@ -127,6 +156,19 @@ export default function SqlPage() {
                         <p className="text-gray-500">Click the button to load data</p>
                     )}
                 </div>
+            </div>
+            
+            {/* Best Selling Time */}
+            <div className="bg-gray-50 p-4 rounded shadow">
+                <h2 className="text-lg font-semibold mb-3">Best Selling Time of Day</h2>
+                {bestTime ? (
+                    <div className="text-center p-4">
+                        <span className="text-xl font-bold text-blue-700">{bestTime}</span>
+                        <p className="text-gray-600 mt-2">This is the peak hour for sales based on December 2023 data</p>
+                    </div>
+                ) : (
+                    <p className="text-gray-500 text-center p-4">Click the button to analyze the best selling time</p>
+                )}
             </div>
         </div>
     );
