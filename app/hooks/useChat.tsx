@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { Message, GeminiMessage, FunctionResult } from '../types/chat';
+import { Message, GeminiMessage, FunctionResult, DataWindowActionParams, LanguageSwitchActionParams } from '../types/chat';
 import { getMerchantSuggestions } from '../gemini/suggestion-generator';
 import { merchants } from '../components/MerchantSelector';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -22,7 +22,7 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
   const processedResultsRef = useRef<Set<string>>(new Set());
   
   // Use the language context
-  const { language, languageName } = useLanguage();
+  const { language, languageName, setLanguage } = useLanguage();
   const prevLanguageRef = useRef(language);
   
   // Update to use function from the suggestion module with language
@@ -195,16 +195,20 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
         if (!result.clientAction) return;
         
         // Generate a stable ID that we can use consistently
-        const stableId = result.clientAction.params?.id || result.id;
+        const stableId = result.clientAction.params && 'id' in result.clientAction.params 
+          ? (result.clientAction.params as {id?: string}).id 
+          : result.id;
         
-        // Skip if no ID is available
-        if (!stableId) {
+        // Skip if no ID is available and it's not a language switch action
+        // (Language switch doesn't need an ID to track)
+        if (!stableId && result.clientAction.type !== "SWITCH_LANGUAGE") {
           console.log('Skipping result without ID:', result);
           return;
         }
         
-        // Skip if we've already processed this result
-        if (processedResultsRef.current.has(stableId)) {
+        // For non-language actions, skip if already processed
+        if (stableId && result.clientAction.type !== "SWITCH_LANGUAGE" && 
+            processedResultsRef.current.has(stableId)) {
           console.log('Already processed result ID:', stableId);
           return;
         }
@@ -213,25 +217,39 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
         switch (result.clientAction.type) {
           case "ADD_DATA_WINDOW":
             if (onAddDataWindow && result.clientAction.params) {
-              const { visualization_type, title, id } = result.clientAction.params;
+              // Use type assertion to tell TypeScript this is a DataWindowActionParams
+              const params = result.clientAction.params as DataWindowActionParams;
+              const { visualization_type, title, id } = params;
               
-              // Only proceed if we have an ID
+              // Only proceed if we have an ID (should be guaranteed by the check above)
               if (id) {
                 console.log('Adding data window with ID:', id);
                 onAddDataWindow(
                   visualization_type, 
                   title,
-                  id // Pass the ID provided from the API response
+                  id
                 );
                 
-                // Mark this result as processed using the stable ID
-                processedResultsRef.current.add(stableId);
-              } else {
-                console.log('Skipping data window without ID');
+                // Mark this result as processed using the stable ID (which equals the id)
+                // TypeScript now knows stableId is defined because of the earlier check
+                if (stableId) {
+                  processedResultsRef.current.add(stableId);
+                }
               }
             }
             break;
-          // Add additional action types here as needed
+          case "SWITCH_LANGUAGE":
+            if (result.clientAction.params) {
+              // Use type assertion to tell TypeScript this is a LanguageSwitchActionParams
+              const params = result.clientAction.params as LanguageSwitchActionParams;
+              
+              if (params.language_code) {
+                console.log('Automatically switching language to:', params.language_code);
+                // Use the setLanguage function from the context hook
+                setLanguage(params.language_code);
+              }
+            }
+            break;
           default:
             console.log("Unknown client action type:", result.clientAction.type);
         }
@@ -245,7 +263,7 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
         handleClientActions(latestMessage._rawData);
       }
     }
-  }, [messages, onAddDataWindow]);
+  }, [messages, onAddDataWindow, setLanguage]);
 
   return {
     messages,

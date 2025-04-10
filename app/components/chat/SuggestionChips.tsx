@@ -22,13 +22,13 @@ export default function SuggestionChips({
   // Use different styling for new conversation vs ongoing
   const chipStyle = isNewConversation
     ? {
-        backgroundColor: "var(--secondary)",
+        backgroundColor: "var(--foreground)",
         color: "var(--light)",
-        border: "1px solid var(--primary)"
+        border: "1px solid var(--secondary)"
       }
     : {
-        backgroundColor: "var(--light)",
-        color: "var(--primary)",
+        backgroundColor: "var(--foreground)",
+        color: "var(--light)",
         border: "1px solid var(--secondary)"
       };
 

@@ -13,14 +13,24 @@ export interface GeminiMessage {
   parts: { text: string }[];
 }
 
+// Define different types of client action parameters
+export interface DataWindowActionParams {
+  visualization_type: 'chart' | 'graph' | 'stats';
+  title?: string;
+  id?: string;
+}
+
+export interface LanguageSwitchActionParams {
+  language_code: string;
+}
+
+// Union type for all possible parameter types
+export type ClientActionParams = DataWindowActionParams | LanguageSwitchActionParams;
+
 // Interface for client actions in function results
 export interface ClientAction {
-  type: string;
-  params: {
-    visualization_type: 'chart' | 'graph' | 'stats';
-    title?: string;
-    id?: string;
-  };
+  type: "ADD_DATA_WINDOW" | "SWITCH_LANGUAGE" | string;
+  params: ClientActionParams;
 }
 
 // Interface for function results

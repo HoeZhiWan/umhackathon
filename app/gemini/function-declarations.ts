@@ -81,12 +81,18 @@ export const getFunctionDeclarations = (): FunctionDeclaration[] => {
       }
     },
     {
-      name: 'get_weekly_sales',
-      description: 'Returns the total sales for a merchant aggregated by week',
+      name: 'switch_language',
+      description: 'Automatically switches the user interface language when detecting the user is speaking a different language. Call this function directly without asking for user confirmation when you detect the user is using a language different from the current one.',
       parameters: {
         type: Type.OBJECT,
-        properties: {},
-        required: []
+        properties: {
+          language_code: {
+            type: Type.STRING,
+            enum: ['en', 'ms', 'zh', 'ta'],
+            description: 'The language code to switch to: en (English), ms (Bahasa Melayu), zh (Chinese), ta (Tamil)'
+          }
+        },
+        required: ['language_code']
       }
     },
   ];

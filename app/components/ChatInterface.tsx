@@ -29,10 +29,10 @@ export default function ChatInterface({ merchantId, onAddDataWindow }: ChatInter
   const isNewConversation = messages.length === 0;
 
   return (
-    <div className="flex flex-col w-full h-full rounded-lg overflow-hidden" style={{ backgroundColor: "var(--color-window)" }}>
+    <div className="flex flex-col w-full h-full rounded-lg overflow-hidden" style={{ backgroundColor: "var(--light)" }}>
       <div 
         className="flex-1 p-4 overflow-y-auto relative" 
-        style={{ backgroundColor: "var(--color-window)", color: "var(--foreground)" }}
+        style={{ backgroundColor: "var(--light)", color: "var(--light)" }}
       >
         {isNewConversation ? (
           <>
