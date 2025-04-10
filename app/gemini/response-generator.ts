@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { ConversationMessage, GeminiResponse } from "./types";
-import { dummy_getCurrentWeather, dummy_getWeatherForecast, display_data_window, get_top_selling_items } from "./functions";
+import { dummy_getCurrentWeather, dummy_getWeatherForecast, display_data_window, get_top_selling_items, switch_language } from "./functions";
 import { getGeminiConfig, MODEL_NAME } from "./config";
 import { generateSuggestions } from "./suggestion-generator";
 
@@ -44,6 +44,31 @@ async function handleToolCall(
       tool_call.args.time_period as 'week' | 'month'
     );
     console.log(`Top selling items function execution result: ${JSON.stringify(functionResult)}`);
+  }
+  else if (tool_call.name === "switch_language" && tool_call.args) {
+    functionResult = switch_language(
+      tool_call.args.language_code as string
+    );
+    console.log(`Language switch function execution result: ${JSON.stringify(functionResult)}`);
+    
+    // Update the language in the system instruction if switch was successful
+    if (functionResult.success && config.systemInstruction && functionResult.language_code) {
+      // Extract current language instruction if it exists
+      const langInstructRegex = /\n\nPlease respond in .+ language\./;
+      const hasLangInstruct = langInstructRegex.test(config.systemInstruction);
+      
+      if (hasLangInstruct) {
+        // Replace existing language instruction
+        config.systemInstruction = config.systemInstruction.replace(
+          langInstructRegex,
+          `\n\nPlease respond in ${getLanguageName(functionResult.language_code)} language.`
+        );
+      } else {
+        // Add new language instruction
+        config.systemInstruction = config.systemInstruction + 
+          `\n\nPlease respond in ${getLanguageName(functionResult.language_code)} language.`;
+      }
+    }
   }
   else {
     // Return null if it's an unrecognized function

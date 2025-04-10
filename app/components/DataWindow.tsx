@@ -152,7 +152,7 @@ function BarChart({ merchantId }: { merchantId: string }) {
       <div className="flex-1 flex items-end justify-around">
         {bars.map((height, index) => (
           <div key={index} className="flex flex-col items-center">
-            <span className="text-xs mb-1" style={{ color: "var(--secondary)" }}>
+            <span className="text-xs mb-1" style={{ color: "var(--dark)" }}>
               {height}%
             </span>
             <div 
@@ -298,12 +298,12 @@ function StatsDisplay({ merchantId }: { merchantId: string }) {
             key={i} 
             className="p-3 rounded-lg"
             style={{ 
-              backgroundColor: "var(--light)", 
-              color: "var(--foreground)" 
+              backgroundColor: "var(--dark)", 
+              color: "var(--light)" 
             }}
           >
-            <p className="text-xs" style={{ color: "var(--secondary)" }}>{stat.label}</p>
-            <p className="text-lg font-bold" style={{ color: "var(--foreground)" }}>{stat.value}</p>
+            <p className="text-xs" style={{ color: "var(--light)" }}>{stat.label}</p>
+            <p className="text-lg font-bold" style={{ color: "var(--background)" }}>{stat.value}</p>
           </div>
         ))}
       </div>

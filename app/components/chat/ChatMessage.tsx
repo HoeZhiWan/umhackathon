@@ -119,20 +119,20 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         }`}
         style={{
           backgroundColor: message.sender === 'user' 
-            ? "var(--secondary)" 
+            ? "var(--dark)" 
             : message.sender === 'system'
               ? "transparent" 
-              : "var(--light)",
+              : "var(--secondary)",
           color: message.sender === 'user' 
             ? "var(--light)" 
             : message.sender === 'system'
               ? "var(--foreground)" 
-              : "var(--dark)"
+              : "var(--light)"
         }}
       >
         {formatText(message.text)}
       </div>
-      <div className="text-xs mt-1" style={{ color: "var(--light)" }}>
+      <div className="text-xs mt-1" style={{ color: "var(--dark)" }}>
         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
       </div>
     </motion.div>

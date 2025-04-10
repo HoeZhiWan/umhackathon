@@ -45,6 +45,40 @@ export function dummy_getWeatherForecast(location: string, days: number = 3, uni
   };
 }
 
+// Function to switch the user's language automatically
+export function switch_language(language_code: string) {
+  try {
+    // Validate the language code (should match those available in LanguageContext)
+    const validLanguageCodes = ['en', 'ms', 'zh', 'ta'];
+    
+    if (!validLanguageCodes.includes(language_code)) {
+      return {
+        success: false,
+        error: `Invalid language code: ${language_code}. Valid codes are: ${validLanguageCodes.join(', ')}`,
+      };
+    }
+    
+    // Return a success response with a client action to switch the language
+    return {
+      success: true,
+      language_code,
+      message: `Switching to ${language_code} language`,
+      clientAction: {
+        type: "SWITCH_LANGUAGE",
+        params: {
+          language_code
+        }
+      }
+    };
+  } catch (error) {
+    console.error('Error in switch_language:', error);
+    return {
+      success: false,
+      error: 'Failed to switch language',
+    };
+  }
+}
+
 // Function to get top selling items
 export async function get_top_selling_items(time_period: 'week' | 'month') {
   try {

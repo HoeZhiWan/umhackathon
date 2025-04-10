@@ -170,7 +170,7 @@ export default function ChatPage() {
       <div className={`grid ${gridClass} gap-4 w-full max-w-6xl h-[calc(100vh-120px)]`}>
         {/* Chat window is always in the center (when there are enough windows) */}
         <div className={`border border-secondary rounded-lg overflow-hidden h-full ${chatArea}`}>
-          <div className="p-2 border-b border-secondary flex items-center">
+          <div className="p-2 border-b border-secondary flex items-center " style={{ backgroundColor: "var(--light)"}}>
             <span className="font-medium">Chat Assistant</span>
           </div>
           <div className="h-[calc(100%-2.5rem)]">
@@ -202,7 +202,7 @@ export default function ChatPage() {
             </div>
             <div 
               className="h-[calc(100%-2.5rem)]"
-              style={{ backgroundColor: "var(--color-window)", color: "var(--foreground)" }}
+              style={{ backgroundColor: "var(--light)", color: "var(--foreground)" }}
             >
               <DataWindow type={window.type} merchantId={merchantId} />
             </div> 
