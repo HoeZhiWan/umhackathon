@@ -7,13 +7,15 @@ interface SuggestionChipsProps {
   onSuggestionClick: (suggestion: string) => void;
   isNewConversation?: boolean;
   isLoading: boolean;
+  language?: string;
 }
 
 export default function SuggestionChips({
   suggestions,
   onSuggestionClick,
   isNewConversation = false,
-  isLoading
+  isLoading,
+  language = 'en'
 }: SuggestionChipsProps) {
   if (!suggestions || suggestions.length === 0 || isLoading) return null;
 
@@ -30,11 +32,43 @@ export default function SuggestionChips({
         border: "1px solid var(--secondary)"
       };
 
+  // Get language-specific "Try asking" text
+  const getTryAskingText = () => {
+    switch (language) {
+      case 'ms':
+        return 'Cuba tanya:';
+      case 'zh':
+        return '尝试提问:';
+      case 'ta':
+        return 'கேட்க முயற்சிக்கவும்:';
+      default:
+        return 'Try asking:';
+    }
+  };
+  
+  // Add language-specific font adjustments
+  const getLanguageStyles = () => {
+    switch (language) {
+      case 'zh':
+        return { 
+          fontSize: '0.95rem',
+          lineHeight: '1.5'
+        };
+      case 'ta':
+        return { 
+          fontSize: '0.9rem',
+          lineHeight: '1.6'
+        };
+      default:
+        return {};
+    }
+  };
+
   return (
     <div className={`my-3 flex flex-wrap gap-2 ${isNewConversation ? 'mt-6' : 'mt-3'}`}>
       {isNewConversation && (
         <div className="w-full mb-2 text-sm">
-          <span>Try asking:</span>
+          <span>{getTryAskingText()}</span>
         </div>
       )}
       
@@ -53,7 +87,13 @@ export default function SuggestionChips({
           className="px-3 py-1.5 rounded-full text-sm transition-colors hover:opacity-80 cursor-pointer"
           disabled={isLoading}
         >
-          <span style={chipStyle} className="px-3 py-1.5 rounded-full block">
+          <span 
+            style={{
+              ...chipStyle,
+              ...getLanguageStyles()
+            }} 
+            className="px-3 py-1.5 rounded-full block"
+          >
             {suggestion}
           </span>
         </motion.button>

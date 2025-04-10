@@ -6,7 +6,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function topSellingItemsWeek(merchantId: string): Promise<{ 
-  topSellingItem: string | null;
+  topSellingItems: Array<{ name: string; count: number }> | null;
   error: Error | null;
 }> {
   const startDate = '2023-12-25T00:00';
@@ -22,18 +22,18 @@ export async function topSellingItemsWeek(merchantId: string): Promise<{
 
     if (errorOrder) {
       console.error('SQL query error:', errorOrder);
-      return {topSellingItem:null, error:errorOrder };
+      return {topSellingItems:null, error:errorOrder };
     }
 
     const orderIds = orders.map(order => order.order_id);
 
     if (orderIds.length === 0) {
       console.log('No orders found in this week.');
-      return { topSellingItem:null, error:errorOrder};
+      return { topSellingItems:[], error:null};
     }
     
     // Query transaction_items
-    const { data: items, error:errorItem} = await supabase
+    const { data: items, error:errorItem } = await supabase
     .from('transaction_items')
     .select('item_id')
     .in('order_id', orderIds)
@@ -42,14 +42,15 @@ export async function topSellingItemsWeek(merchantId: string): Promise<{
 
     if (errorItem) {
       console.error('SQL query error:', errorItem);
-      return { topSellingItem:null,  error:errorItem };
+      return { topSellingItems:null, error:errorItem };
     }
 
     // Count occurrences of each item_id
-    const countMap: Record<string, { count: number; itemId: string }> = {};
+    const countMap: Record<number, { count: number; itemId: number }> = {};
 
     for (const item of items) {
-      const id = item.item_id;
+      // Ensure item_id is treated as a number
+      const id = Number(item.item_id);
       if (countMap[id]) {
         countMap[id].count += 1;
       } else {
@@ -57,34 +58,52 @@ export async function topSellingItemsWeek(merchantId: string): Promise<{
       }
     }
 
-    // Find the mode (most frequently occurring item_id)
-    let modeId: string | null = null;
-    let modeCount = 0;
-
-    for (const [id, { count, itemId }] of Object.entries(countMap)) {
-      if (count > modeCount) {
-        modeId = id;
-        modeCount = count;
-      }
+    // Sort items by count in descending order and take top 5
+    const topItems = Object.entries(countMap)
+      .map(([idStr, { count }]) => ({ id: Number(idStr), count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    
+    if (topItems.length === 0) {
+      return { topSellingItems: [], error: null };
     }
 
-    // Get item name
-    const { data: modeName, error: itemInfoError } = await supabase
+    // Get item names for the top items - ensure we're passing numbers
+    const itemIds = topItems.map(item => item.id);
+    
+    console.log('Looking up items with IDs:', itemIds);
+    
+    const { data: itemNames, error: itemInfoError } = await supabase
       .from("items")
-      .select("item_name")
-      .eq("item_id", modeId)
-      .limit(1)
+      .select("item_id, item_name")
+      .in("item_id", itemIds);
 
-    return { topSellingItem: modeName && modeName.length > 0 ? modeName[0].item_name : null, error: null };
+    if (itemInfoError) {
+      console.error('Error fetching item names:', itemInfoError);
+      return { topSellingItems: null, error: itemInfoError };
+    }
+    
+    console.log('Found item names:', itemNames);
+
+    // Create result with names and counts
+    const result = topItems.map(item => {
+      const foundItem = itemNames.find(nameItem => Number(nameItem.item_id) === item.id);
+      return {
+        name: foundItem ? foundItem.item_name : `Unknown Item (${item.id})`,
+        count: item.count
+      };
+    });
+
+    return { topSellingItems: result, error: null };
     
   } catch (error) {
     console.error('Failed to execute SQL query:', error);
-    return { topSellingItem:null, error: error as Error };
+    return { topSellingItems: null, error: error as Error };
   }
 }
 
 export async function topSellingItemsMonth(merchantId: string): Promise<{ 
-  topSellingItem: string | null;
+  topSellingItems: Array<{ name: string; count: number }> | null;
   error: Error | null;
 }> {
   const startDate = '2023-12-01T00:00';
@@ -100,14 +119,14 @@ export async function topSellingItemsMonth(merchantId: string): Promise<{
 
     if (errorOrder) {
       console.error('SQL query error:', errorOrder);
-      return {topSellingItem:null, error:errorOrder };
+      return {topSellingItems:null, error:errorOrder };
     }
 
     const orderIds = orders.map(order => order.order_id);
 
     if (orderIds.length === 0) {
       console.log('No orders found in this month.');
-      return { topSellingItem:null, error:errorOrder};
+      return { topSellingItems:[], error:null};
     }
     
     // Query transaction_items
@@ -120,14 +139,15 @@ export async function topSellingItemsMonth(merchantId: string): Promise<{
 
     if (errorItem) {
       console.error('SQL query error:', errorItem);
-      return { topSellingItem:null,  error:errorItem };
+      return { topSellingItems:null, error:errorItem };
     }
 
     // Count occurrences of each item_id
-    const countMap: Record<string, { count: number; itemId: string }> = {};
+    const countMap: Record<number, { count: number; itemId: number }> = {};
 
     for (const item of items) {
-      const id = item.item_id;
+      // Ensure item_id is treated as a number
+      const id = Number(item.item_id);
       if (countMap[id]) {
         countMap[id].count += 1;
       } else {
@@ -135,29 +155,47 @@ export async function topSellingItemsMonth(merchantId: string): Promise<{
       }
     }
 
-    // Find the mode (most frequently occurring item_id)
-    let modeId: string | null = null;
-    let modeCount = 0;
-
-    for (const [id, { count, itemId }] of Object.entries(countMap)) {
-      if (count > modeCount) {
-        modeId = id;
-        modeCount = count;
-      }
+    // Sort items by count in descending order and take top 5
+    const topItems = Object.entries(countMap)
+      .map(([idStr, { count }]) => ({ id: Number(idStr), count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    
+    if (topItems.length === 0) {
+      return { topSellingItems: [], error: null };
     }
 
-    // Get item name
-    const { data: modeName, error: itemInfoError } = await supabase
+    // Get item names for the top items - ensure we're passing numbers
+    const itemIds = topItems.map(item => item.id);
+    
+    console.log('Looking up monthly items with IDs:', itemIds);
+    
+    const { data: itemNames, error: itemInfoError } = await supabase
       .from("items")
-      .select("item_name")
-      .eq("item_id", modeId)
-      .limit(1)
+      .select("item_id, item_name")
+      .in("item_id", itemIds);
 
-    return { topSellingItem: modeName && modeName.length > 0 ? modeName[0].item_name : null, error: null };
+    if (itemInfoError) {
+      console.error('Error fetching item names:', itemInfoError);
+      return { topSellingItems: null, error: itemInfoError };
+    }
+    
+    console.log('Found monthly item names:', itemNames);
+
+    // Create result with names and counts
+    const result = topItems.map(item => {
+      const foundItem = itemNames.find(nameItem => Number(nameItem.item_id) === item.id);
+      return {
+        name: foundItem ? foundItem.item_name : `Unknown Item (${item.id})`,
+        count: item.count
+      };
+    });
+
+    return { topSellingItems: result, error: null };
     
   } catch (error) {
     console.error('Failed to execute SQL query:', error);
-    return { topSellingItem:null, error: error as Error };
+    return { topSellingItems: null, error: error as Error };
   }
 }
 

@@ -22,7 +22,8 @@ export default function ChatInterface({ merchantId, onAddDataWindow }: ChatInter
     handleSubmit,
     messagesEndRef,
     suggestedPrompts,
-    handleSuggestionClick
+    handleSuggestionClick,
+    language
   } = useChat({ initialMerchantId: merchantId, onAddDataWindow });
 
   const isNewConversation = messages.length === 0;
@@ -41,6 +42,7 @@ export default function ChatInterface({ merchantId, onAddDataWindow }: ChatInter
               onSuggestionClick={handleSuggestionClick}
               isNewConversation={true}
               isLoading={isLoading}
+              language={language}
             />
           </>
         ) : (
@@ -59,6 +61,7 @@ export default function ChatInterface({ merchantId, onAddDataWindow }: ChatInter
                 onSuggestionClick={handleSuggestionClick}
                 isNewConversation={false}
                 isLoading={isLoading}
+                language={language}
               />
             )}
           </>

@@ -5,9 +5,11 @@ import { useState, useEffect } from 'react';
 interface DataWindowProps {
   type: 'chart' | 'graph' | 'stats';
   merchantId: string;
+  data?: any;
+  title?: string;
 }
 
-export default function DataWindow({ type, merchantId }: DataWindowProps) {
+export default function DataWindow({ type, merchantId, data, title }: DataWindowProps) {
   const [isLoading, setIsLoading] = useState(true);
   
   // Simulate data loading
@@ -32,6 +34,11 @@ export default function DataWindow({ type, merchantId }: DataWindowProps) {
       );
     }
 
+    // Handle top selling items data if available
+    if (data?.topItems) {
+      return <TopSellingItemsDisplay items={data.topItems} period={data.period} merchant={data.merchant} />;
+    }
+
     switch (type) {
       case 'chart':
         return <BarChart merchantId={merchantId} />;
@@ -46,7 +53,64 @@ export default function DataWindow({ type, merchantId }: DataWindowProps) {
 
   return (
     <div className="h-full">
+      {title && <h3 className="text-sm mb-2 font-medium">{title}</h3>}
       {renderContent()}
+    </div>
+  );
+}
+
+// New component to display top selling items
+function TopSellingItemsDisplay({ 
+  items, 
+  period, 
+  merchant 
+}: { 
+  items: Array<{ name: string; count: number }> | string; 
+  period: string;
+  merchant: string;
+}) {
+  // Handle case where items is a string (no data available)
+  if (typeof items === 'string') {
+    return <div className="text-center py-4 text-gray-500">{items}</div>;
+  }
+
+  const getColor = () => period === 'week' ? '#FDE68A' : '#A7F3D0';
+  const getTextColor = () => period === 'week' ? '#92400E' : '#065F46';
+  const getPeriodName = () => period === 'week' ? 'Weekly' : 'Monthly';
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-auto">
+        {items.length > 0 ? (
+          <div className="space-y-3">
+            {items.map((item, index) => (
+              <div 
+                key={index} 
+                className="flex items-center justify-between p-2 rounded-lg"
+                style={{ backgroundColor: index % 2 === 0 ? 'rgba(0,0,0,0.03)' : 'transparent' }}
+              >
+                <div className="flex items-center">
+                  <div 
+                    className="w-6 h-6 rounded-full flex items-center justify-center mr-3 text-xs font-bold"
+                    style={{ backgroundColor: getColor(), color: getTextColor() }}
+                  >
+                    {index + 1}
+                  </div>
+                  <span className="font-medium">{item.name}</span>
+                </div>
+                <div 
+                  className="px-3 py-1 rounded-full text-sm"
+                  style={{ backgroundColor: getColor(), color: getTextColor() }}
+                >
+                  {item.count} sold
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4 text-gray-500">No items found for this period</div>
+        )}
+      </div>
     </div>
   );
 }
