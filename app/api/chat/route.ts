@@ -6,32 +6,28 @@ export async function POST(request: NextRequest) {
   try {
     const { message, merchantId, history = [] } = await request.json();
 
-    const aiResponse = await generateGeminiResponse(message, history as ConversationMessage[]);
+    // Call the Gemini response generator
+    const response = await generateGeminiResponse(message, history);
 
-    console.log('AI Response:', aiResponse);
-
-    if (aiResponse) {
-      return NextResponse.json({
-        type: 'text', 
-        message: aiResponse.message,
-        functionResults: aiResponse.functionResults,
-        history: aiResponse.history,
+    if (!response) {
+      return NextResponse.json({ 
+        message: "Sorry, I couldn't process your request.",
         timestamp: new Date().toISOString()
-      });
+      }, { status: 500 });
     }
 
+    // Send the complete response to the client, including functionResults
     return NextResponse.json({
-      type: 'text',
-      message: `You asked: "${message}" - I'm not sure how to help with that.`,
-      history: [...history, { role: 'user', parts: [{ text: message }] }],
+      message: response.message,
+      history: response.history,
+      functionResults: response.functionResults,
       timestamp: new Date().toISOString()
     });
-
   } catch (error) {
-    console.error('Error processing chat request:', error);
-    return NextResponse.json(
-      { error: 'Failed to process request' },
-      { status: 500 }
-    );
+    console.error('Error in chat API route:', error);
+    return NextResponse.json({ 
+      message: "An error occurred while processing your request.",
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
   }
 }

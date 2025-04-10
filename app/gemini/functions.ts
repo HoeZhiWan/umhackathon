@@ -41,3 +41,40 @@ export function dummy_getWeatherForecast(location: string, days: number = 3, uni
     unit: unit || 'Celsius'
   };
 }
+
+// Function to display data visualization windows
+export function display_data_window(visualization_type: 'chart' | 'graph' | 'stats', title?: string) {
+  // This function returns a structured response with a client action
+  const windowType = visualization_type as 'chart' | 'graph' | 'stats';
+  
+  // Create a descriptive response about what will be displayed
+  const visualizationDescriptions = {
+    chart: "bar chart showing sales by category",
+    graph: "line graph showing performance trends over time",
+    stats: "key metrics including total revenue, customers, average order value, and conversion rate"
+  };
+  
+  // Generate a stable ID based on the window type and title
+  const windowTitle = title || (windowType === 'chart' ? 'Sales Analysis' : 
+                     windowType === 'graph' ? 'Performance Trends' : 'Key Statistics');
+  
+  // Create a stable unique ID by combining type and title (and timestamp as fallback)
+  const resultId = `window-${windowType}-${windowTitle.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+  
+  return {
+    success: true,
+    window_type: windowType,
+    title: windowTitle,
+    description: `A ${visualizationDescriptions[windowType]} has been displayed.`,
+    id: resultId, // Add a stable ID here
+    // Add a structured client action that the frontend can interpret
+    clientAction: {
+      type: "ADD_DATA_WINDOW",
+      params: {
+        visualization_type: windowType,
+        title: windowTitle,
+        id: resultId // Include the ID in the params as well
+      }
+    }
+  };
+}

@@ -7,6 +7,7 @@ interface Message {
   text: string;
   sender: 'user' | 'bot' | 'system';
   timestamp: Date;
+  _rawData?: any; // Adding optional _rawData property
 }
 
 // Define interface for Gemini's conversation format
@@ -15,7 +16,13 @@ interface GeminiMessage {
   parts: { text: string }[];
 }
 
-export default function ChatInterface({ merchantId: initialMerchantId }: { merchantId?: string }) {
+// Add this to your ChatInterface component props
+interface ChatInterfaceProps {
+  merchantId: string;
+  onAddDataWindow?: (type: 'chart' | 'graph' | 'stats', title?: string) => string | undefined;
+}
+
+export default function ChatInterface({ merchantId: initialMerchantId, onAddDataWindow }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -23,6 +30,7 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMerchantIdRef = useRef(merchantId);
   const [conversationHistory, setConversationHistory] = useState<GeminiMessage[]>([]);
+  const processedResultsRef = useRef<Set<string>>(new Set());
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -90,12 +98,13 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
 
       console.log('API Response data:', data);
       
-      // Add bot message from API response
+      // Add bot message from API response with the raw data
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: data.message || "I don't have a response for that.",
         sender: 'bot',
         timestamp: new Date(data.timestamp || Date.now()),
+        _rawData: data // Store the full response data
       };
 
       setMessages(prev => [...prev, botMessage]);
@@ -120,6 +129,62 @@ export default function ChatInterface({ merchantId: initialMerchantId }: { merch
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Add this to make the function callable by Gemini via injected JavaScript
+    if (typeof window !== 'undefined' && onAddDataWindow) {
+      // No need for direct JS execution via window object
+    }
+  }, [onAddDataWindow]);
+
+  // Add this effect to process function results that need client-side execution
+  useEffect(() => {
+    // This is where we handle any message with clientAction instructions
+    const handleClientActions = (message: any) => {
+      if (message.functionResults && Array.isArray(message.functionResults)) {
+        message.functionResults.forEach((result: any) => {
+          // Use the server-generated ID if available, otherwise create a fallback
+          const resultId = result.id || 
+                          `fallback-${result.window_type || ''}-${result.clientAction?.params?.title || ''}-${Date.now()}`;
+          
+          // Skip if we've already processed this result
+          if (processedResultsRef.current.has(resultId)) {
+            return;
+          }
+          
+          if (result.clientAction) {
+            // Process the client action based on its type
+            switch (result.clientAction.type) {
+              case "ADD_DATA_WINDOW":
+                if (onAddDataWindow && result.clientAction.params) {
+                  const { visualization_type, title } = result.clientAction.params;
+                  onAddDataWindow(
+                    visualization_type as 'chart' | 'graph' | 'stats', 
+                    title
+                  );
+                  
+                  // Mark this result as processed
+                  processedResultsRef.current.add(resultId);
+                  console.log("Processed result ID:", resultId);
+                }
+                break;
+              // Add additional action types here as needed
+              default:
+                console.log("Unknown client action type:", result.clientAction.type);
+            }
+          }
+        });
+      }
+    };
+
+    // Apply this to the latest message if it exists
+    if (messages.length > 0) {
+      const latestMessage = messages[messages.length - 1];
+      if (latestMessage.sender === 'bot' && latestMessage._rawData) {
+        handleClientActions(latestMessage._rawData);
+      }
+    }
+  }, [messages, onAddDataWindow]);
 
   return (
     <div className="flex flex-col w-full h-full rounded-lg overflow-hidden" style={{ backgroundColor: "var(--color-window)" }}>

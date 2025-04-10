@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { ConversationMessage, GeminiResponse } from "./types";
-import { dummy_getCurrentWeather, dummy_getWeatherForecast } from "./functions";
+import { dummy_getCurrentWeather, dummy_getWeatherForecast, display_data_window } from "./functions";
 import { getGeminiConfig, MODEL_NAME } from "./config";
 
 const API_KEY = process.env.GEMINI_API_KEY;
@@ -30,6 +30,15 @@ async function handleToolCall(
       tool_call.args.unit as string
     );
     console.log(`Forecast function execution result: ${JSON.stringify(functionResult)}`);
+  }
+  else if (tool_call.name === "display_data_window" && tool_call.args) {
+    functionResult = display_data_window(
+      tool_call.args.visualization_type as 'chart' | 'graph' | 'stats',
+      tool_call.args.title as string
+    );
+    console.log(`Display data window function execution result: ${JSON.stringify(functionResult)}`);
+    
+    // No need to modify the function result - it already contains the structured clientAction
   }
   else {
     // Return null if it's an unrecognized function
@@ -157,7 +166,7 @@ export async function generateGeminiResponse(userInput: string, conversationHist
       type: 'text',
       message: textResponse,
       functionResults: functionResults.length > 0 ? functionResults : null,
-      history: updatedHistory // Return the updated conversation history
+      history: updatedHistory, // Return the updated conversation history
     };
 
   } catch (error) {

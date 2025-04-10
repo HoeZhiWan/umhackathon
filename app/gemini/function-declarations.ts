@@ -46,5 +46,24 @@ export const getFunctionDeclarations = (): FunctionDeclaration[] => {
         required: ['location']
       }
     },
+    {
+      name: 'display_data_window',
+      description: 'Displays a data visualization window in the interface. Use this when you want to show charts, graphs, or statistics to the user.',
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          visualization_type: {
+            type: Type.STRING,
+            enum: ['chart', 'graph', 'stats'],
+            description: 'The type of visualization to display'
+          },
+          title: {
+            type: Type.STRING,
+            description: 'Title for the visualization window (optional)'
+          }
+        },
+        required: ['visualization_type']
+      }
+    },
   ];
 }

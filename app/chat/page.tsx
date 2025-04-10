@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import ChatInterface from "../components/ChatInterface";
 import MerchantSelector from "../components/MerchantSelector";
 import DataWindow from "../components/DataWindow";
@@ -12,31 +12,50 @@ interface Window {
   title: string;
 }
 
+// Define a global function that Gemini can call
+declare global {
+  interface Window {
+    addDataWindowFromGemini?: (type: 'chart' | 'graph' | 'stats', title?: string) => void;
+  }
+}
+
 export default function ChatPage() {
   const [merchantId, setMerchantId] = useState("abc123"); // Default merchant
   
   // State to manage data windows
-  const [dataWindows, setDataWindows] = useState<Window[]>([
-    // { id: "window1", type: "chart", title: "Sales Performance" },
-    // { id: "window2", type: "graph", title: "Customer Demographics" }
-  ]);
+  const [dataWindows, setDataWindows] = useState<Window[]>([]);
 
   // Function to add a new data window
-  const addDataWindow = (type: 'chart' | 'graph' | 'stats') => {
+  const addDataWindow = useCallback((type: 'chart' | 'graph' | 'stats', customTitle?: string) => {
     if (dataWindows.length >= 5) return; // Maximum 5 data windows + 1 chat
     
     // Generate a unique ID using timestamp to ensure uniqueness
     const newId = `window-${Date.now()}`;
-    const title = type === 'chart' ? 'New Chart' : 
-                  type === 'graph' ? 'New Graph' : 'Statistics';
+    const defaultTitle = type === 'chart' ? 'Sales Analysis' : 
+                  type === 'graph' ? 'Performance Trends' : 'Key Statistics';
+    const title = customTitle || defaultTitle;
     
-    setDataWindows([...dataWindows, { id: newId, type, title }]);
-  };
+    setDataWindows(prevWindows => [...prevWindows, { id: newId, type, title }]);
+    return newId;
+  }, [dataWindows]);
 
   // Function to remove a data window
   const removeDataWindow = (windowId: string) => {
     setDataWindows(dataWindows.filter(window => window.id !== windowId));
   };
+
+  // Expose the function globally for Gemini to call
+  useState(() => {
+    if (typeof window !== 'undefined') {
+      window.addDataWindowFromGemini = (type, title) => addDataWindow(type, title);
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete window.addDataWindowFromGemini;
+      }
+    };
+  });
 
   // Calculate the grid layout to keep chat in center with full height
   const getGridLayout = () => {
@@ -156,7 +175,10 @@ export default function ChatPage() {
             <span className="font-medium">Chat Assistant</span>
           </div>
           <div className="h-[calc(100%-2.5rem)]">
-            <ChatInterface merchantId={merchantId} />
+            <ChatInterface 
+              merchantId={merchantId}
+              onAddDataWindow={addDataWindow}
+            />
           </div>
         </div>
 
@@ -180,10 +202,10 @@ export default function ChatPage() {
               </button>
             </div>
             <div 
-              className="p-4 h-full"
+              className="h-[calc(100%-2.5rem)]"
               style={{ backgroundColor: "var(--color-window)", color: "var(--foreground)" }}
             >
-              <p>Content for {window.type} window</p>
+              <DataWindow type={window.type} merchantId={merchantId} />
             </div> 
           </div>
         ))}
