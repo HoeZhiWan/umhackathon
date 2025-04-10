@@ -5,6 +5,7 @@ import ChatMessage from './chat/ChatMessage';
 import LoadingIndicator from './chat/LoadingIndicator';
 import EmptyState from './chat/EmptyState';
 import ChatInput from './chat/ChatInput';
+import SuggestionChips from './chat/SuggestionChips';
 import { Message } from '../types/chat';
 
 interface ChatInterfaceProps {
@@ -19,21 +20,44 @@ export default function ChatInterface({ merchantId, onAddDataWindow }: ChatInter
     setInputValue,
     isLoading,
     handleSubmit,
-    messagesEndRef
+    messagesEndRef,
+    suggestedPrompts,
+    handleSuggestionClick
   } = useChat({ initialMerchantId: merchantId, onAddDataWindow });
+
+  const isNewConversation = messages.length === 0;
 
   return (
     <div className="flex flex-col w-full h-full rounded-lg overflow-hidden" style={{ backgroundColor: "var(--color-window)" }}>
       <div className="flex-1 p-4 overflow-y-auto" style={{ backgroundColor: "var(--color-window)", color: "var(--foreground)" }}>
-        {messages.length === 0 ? (
-          <EmptyState />
+        {isNewConversation ? (
+          <>
+            <EmptyState />
+            <SuggestionChips
+              suggestions={suggestedPrompts}
+              onSuggestionClick={handleSuggestionClick}
+              isNewConversation={true}
+              isLoading={isLoading}
+            />
+          </>
         ) : (
-          messages.map((message: Message) => (
-            <ChatMessage key={message.id} message={message} />
-          ))
+          <>
+            {messages.map((message: Message) => (
+              <ChatMessage key={message.id} message={message} />
+            ))}
+            
+            {isLoading && <LoadingIndicator />}
+            
+            {!isLoading && (
+              <SuggestionChips
+                suggestions={suggestedPrompts}
+                onSuggestionClick={handleSuggestionClick}
+                isNewConversation={false}
+                isLoading={isLoading}
+              />
+            )}
+          </>
         )}
-        
-        {isLoading && <LoadingIndicator />}
         
         <div ref={messagesEndRef}></div>
       </div>

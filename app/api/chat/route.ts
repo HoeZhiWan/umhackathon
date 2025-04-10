@@ -16,11 +16,12 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Send the complete response to the client, including functionResults
+    // Send the complete response to the client, including functionResults and suggestedPrompts
     return NextResponse.json({
       message: response.message,
       history: response.history,
       functionResults: response.functionResults,
+      suggestedPrompts: response.suggestedPrompts,
       timestamp: new Date().toISOString()
     });
   } catch (error) {

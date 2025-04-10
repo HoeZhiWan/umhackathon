@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Message, GeminiMessage, FunctionResult } from '../types/chat';
+import { getMerchantSuggestions } from '../gemini/suggestion-generator';
 
 interface UseChatProps {
   initialMerchantId: string;
@@ -17,6 +18,11 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
   const prevMerchantIdRef = useRef(merchantId);
   const [conversationHistory, setConversationHistory] = useState<GeminiMessage[]>([]);
   const processedResultsRef = useRef<Set<string>>(new Set());
+  
+  // Update to use function from the suggestion module
+  const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>(
+    getMerchantSuggestions(merchantId)
+  );
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -26,6 +32,7 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
   // Handle merchant change
   const handleMerchantChange = (newMerchantId: string) => {
     setMerchantId(newMerchantId);
+    
     // Add a system message about the merchant change
     const systemMessage: Message = {
       id: Date.now().toString(),
@@ -34,8 +41,9 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
       timestamp: new Date()
     };
     setMessages(prev => [...prev, systemMessage]);
-    // Reset conversation history when merchant changes
+    // Reset conversation history and get new merchant-specific suggestions
     setConversationHistory([]);
+    setSuggestedPrompts(getMerchantSuggestions(newMerchantId));
   };
 
   // When merchantId changes externally
@@ -49,11 +57,15 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
+    await sendMessage(inputValue);
+  };
 
+  // Separate the message sending logic into its own function
+  const sendMessage = async (messageText: string) => {
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputValue,
+      text: messageText,
       sender: 'user',
       timestamp: new Date()
     };
@@ -99,6 +111,12 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
       if (data.history) {
         setConversationHistory(data.history);
       }
+      
+      // Update suggested prompts from the response if available
+      if (data.suggestedPrompts && Array.isArray(data.suggestedPrompts)) {
+        setSuggestedPrompts(data.suggestedPrompts);
+      }
+      
     } catch (error) {
       console.error('Error getting chat response:', error);
       
@@ -114,6 +132,11 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Handle suggestion clicks - now uses the sendMessage function
+  const handleSuggestionClick = async (suggestion: string) => {
+    await sendMessage(suggestion);
   };
 
   // Process function results that require client-side execution
@@ -170,6 +193,8 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
     setInputValue,
     isLoading,
     handleSubmit,
-    messagesEndRef
+    messagesEndRef,
+    suggestedPrompts,
+    handleSuggestionClick
   };
 }

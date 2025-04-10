@@ -38,4 +38,5 @@ export interface ChatApiResponse {
   history?: GeminiMessage[];
   functionResults?: FunctionResult[];
   timestamp?: string;
+  suggestedPrompts?: string[]; // Add suggested prompts to the API response
 }

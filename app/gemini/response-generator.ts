@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { ConversationMessage, GeminiResponse } from "./types";
 import { dummy_getCurrentWeather, dummy_getWeatherForecast, display_data_window } from "./functions";
 import { getGeminiConfig, MODEL_NAME } from "./config";
+import { generateSuggestions } from "./suggestion-generator";
 
 const API_KEY = process.env.GEMINI_API_KEY;
 
@@ -162,11 +163,15 @@ export async function generateGeminiResponse(userInput: string, conversationHist
     };
     updatedHistory.push(modelResponseMessage);
 
+    // Generate suggested follow-up prompts using the dedicated module
+    const suggestedPrompts = await generateSuggestions(updatedHistory, genAI, API_KEY);
+
     return {
       type: 'text',
       message: textResponse,
       functionResults: functionResults.length > 0 ? functionResults : null,
       history: updatedHistory, // Return the updated conversation history
+      suggestedPrompts: suggestedPrompts, // Include suggested prompts
     };
 
   } catch (error) {

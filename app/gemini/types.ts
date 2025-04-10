@@ -23,4 +23,5 @@ export interface GeminiResponse {
   message: string;
   functionResults: any[] | null;
   history: ConversationMessage[];
+  suggestedPrompts?: string[]; // Add suggested prompts
 }
