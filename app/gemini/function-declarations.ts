@@ -65,5 +65,20 @@ export const getFunctionDeclarations = (): FunctionDeclaration[] => {
         required: ['visualization_type']
       }
     },
+    {
+      name: 'get_top_selling_items',
+      description: 'Returns the top selling item for a merchant during a specific time period',
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          time_period: {
+            type: Type.STRING,
+            enum: ['week', 'month'],
+            description: 'The time period to analyze: week (last 7 days) or month (last 30 days)'
+          }
+        },
+        required: ['time_period']
+      }
+    },
   ];
 }

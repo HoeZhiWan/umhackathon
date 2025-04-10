@@ -83,8 +83,8 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   const messageAlignmentClass = message.sender === 'user' 
     ? 'ml-auto text-right' 
     : message.sender === 'system'
-      ? 'mx-auto text-center' // Center system messages
-      : 'mr-auto'; // Bot messages stay left-aligned
+      ? 'mx-auto text-center' 
+      : 'mr-auto'; 
 
   // Determine animation properties based on sender
   const animationProps = {
@@ -114,18 +114,20 @@ export default function ChatMessage({ message }: ChatMessageProps) {
           message.sender === 'user' 
             ? 'rounded-tr-none' 
             : message.sender === 'system'
-              ? 'rounded-none bg-opacity-70' // Different styling for system
+              ? 'bg-transparent italic' 
               : 'rounded-tl-none'
         }`}
         style={{
           backgroundColor: message.sender === 'user' 
             ? "var(--secondary)" 
             : message.sender === 'system'
-              ? "var(--info)" // Different background for system messages
+              ? "transparent" 
               : "var(--light)",
-          color: message.sender === 'user' || message.sender === 'system' 
+          color: message.sender === 'user' 
             ? "var(--light)" 
-            : "var(--dark)"
+            : message.sender === 'system'
+              ? "var(--foreground)" 
+              : "var(--dark)"
         }}
       >
         {formatText(message.text)}

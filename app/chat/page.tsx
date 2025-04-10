@@ -15,22 +15,22 @@ interface Window {
 // Define a global function that Gemini can call
 declare global {
   interface Window {
-    addDataWindowFromGemini?: (type: 'chart' | 'graph' | 'stats', title?: string) => void;
+    addDataWindowFromGemini?: (type: 'chart' | 'graph' | 'stats', title?: string, id?: string) => void;
   }
 }
 
 export default function ChatPage() {
-  const [merchantId, setMerchantId] = useState("abc123"); // Default merchant
+  const [merchantId, setMerchantId] = useState("0c2d7"); // Default merchant
   
   // State to manage data windows
   const [dataWindows, setDataWindows] = useState<Window[]>([]);
 
   // Function to add a new data window
-  const addDataWindow = useCallback((type: 'chart' | 'graph' | 'stats', customTitle?: string) => {
-    if (dataWindows.length >= 5) return; // Maximum 5 data windows + 1 chat
+  const addDataWindow = useCallback((type: 'chart' | 'graph' | 'stats', customTitle?: string, providedId?: string) => {
+    if (dataWindows.length >= 5 || !providedId) return; // Maximum 5 data windows + require providedId
     
-    // Generate a unique ID using timestamp to ensure uniqueness
-    const newId = `window-${Date.now()}`;
+    // Only use the ID provided from the API response
+    const newId = providedId;
     const defaultTitle = type === 'chart' ? 'Sales Analysis' : 
                   type === 'graph' ? 'Performance Trends' : 'Key Statistics';
     const title = customTitle || defaultTitle;
@@ -47,7 +47,7 @@ export default function ChatPage() {
   // Expose the function globally for Gemini to call
   useState(() => {
     if (typeof window !== 'undefined') {
-      window.addDataWindowFromGemini = (type, title) => addDataWindow(type, title);
+      window.addDataWindowFromGemini = (type, title, id) => addDataWindow(type, title, id);
     }
     
     return () => {
@@ -138,29 +138,26 @@ export default function ChatPage() {
           />
           <div className="flex gap-2">
             <button 
-              onClick={() => addDataWindow('chart')} 
-              disabled={dataWindows.length >= 5}
               className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               style={{ backgroundColor: "var(--info)" }}
-              title="Add Chart"
+              title="Chart windows can only be created by the AI assistant"
+              disabled={true} // No longer allow manual creation without IDs
             >
               + Chart
             </button>
             <button 
-              onClick={() => addDataWindow('graph')} 
-              disabled={dataWindows.length >= 5}
               className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               style={{ backgroundColor: "var(--info)" }}
-              title="Add Graph"
+              title="Graph windows can only be created by the AI assistant"
+              disabled={true} // No longer allow manual creation without IDs
             >
               + Graph
             </button>
             <button 
-              onClick={() => addDataWindow('stats')} 
-              disabled={dataWindows.length >= 5}
               className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               style={{ backgroundColor: "var(--info)" }}
-              title="Add Stats"
+              title="Stats windows can only be created by the AI assistant" 
+              disabled={true} // No longer allow manual creation without IDs
             >
               + Stats
             </button>

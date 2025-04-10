@@ -28,8 +28,8 @@ export async function getHighestOrderValue(): Promise<{
     }
     
     return {
-      value: data && data.length > 0 ? data[0].order_value : null,
-      orderId: data && data.length > 0 ? data[0].order_id : null,
+      value: data ? data.order_value : null,
+      orderId: data ? data.order_id : null,
       error: null
     };
   } catch (error) {

@@ -59,7 +59,7 @@ export async function generateSuggestions(
 function getDefaultSuggestions(): string[] {
   return [
     "Show me this month's sales trends",
-    "What are my best-selling items?",
+    "What are my best-selling items this month?",
     "How do I compare to similar merchants?",
     "Any issues I should address?"
   ];
@@ -70,7 +70,7 @@ export function getMerchantSuggestions(merchantId: string): string[] {
   // You could customize these based on merchantId in the future
   return [
     "Show my sales overview",
-    "What are my best-selling items?",
+    "What are my best-selling items this month?",
     "How do I compare to similar merchants?",
     "Any issues to address?"
   ];
