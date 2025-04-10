@@ -24,9 +24,9 @@ export default function DataWindow({ type, merchantId }: DataWindowProps) {
       return (
         <div className="h-full flex items-center justify-center">
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500 animate-bounce"></div>
-            <div className="w-3 h-3 rounded-full bg-blue-500 animate-bounce [animation-delay:0.2s]"></div>
-            <div className="w-3 h-3 rounded-full bg-blue-500 animate-bounce [animation-delay:0.4s]"></div>
+            <div className="w-3 h-3 rounded-full animate-bounce" style={{ backgroundColor: "var(--light)" }}></div>
+            <div className="w-3 h-3 rounded-full animate-bounce [animation-delay:0.2s]" style={{ backgroundColor: "var(--light)" }}></div>
+            <div className="w-3 h-3 rounded-full animate-bounce [animation-delay:0.4s]" style={{ backgroundColor: "var(--light)" }}></div>
           </div>
         </div>
       );
@@ -52,21 +52,57 @@ export default function DataWindow({ type, merchantId }: DataWindowProps) {
 }
 
 function BarChart({ merchantId }: { merchantId: string }) {
-  // Placeholder for a bar chart visualization
-  const bars = [65, 40, 85, 30, 55, 60, 45];
+  // Use state to store consistent random data
+  const [bars, setBars] = useState<number[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const maxBarHeight = 100;
+  
+  useEffect(() => {
+    // Create a simple hash from merchantId to get consistent numbers
+    const hashCode = (s: string) => {
+      let h = 0;
+      for(let i = 0; i < s.length; i++)
+        h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+      return Math.abs(h);
+    };
+    
+    const baseSeed = hashCode(merchantId);
+    let currentSeed = baseSeed;
+    const getRandom = (min: number, max: number) => {
+      const x = Math.sin(currentSeed++) * 10000;
+      return min + (x - Math.floor(x)) * (max - min);
+    };
+    
+    // Generate random bar values
+    const newBars = Array(7).fill(0).map(() => Math.floor(getRandom(30, 90)));
+    setBars(newBars);
+    
+    // Define categories for the bars
+    const itemCategories = ['Food', 'Drinks', 'Dessert', 'Takeout', 'Delivery', 'Catering', 'Other'];
+    setCategories(itemCategories);
+  }, [merchantId]);
 
   return (
     <div className="h-full flex flex-col">
       <h3 className="text-sm mb-2">Sales by Category ({merchantId})</h3>
-      <div className="flex-1 flex items-end justify-between gap-2 pt-4">
-        {bars.map((height, i) => (
-          <div key={i} className="flex flex-col items-center flex-1">
+      <div className="flex-1 flex items-end justify-around">
+        {bars.map((height, index) => (
+          <div key={index} className="flex flex-col items-center">
+            <span className="text-xs mb-1" style={{ color: "var(--secondary)" }}>
+              {height}%
+            </span>
             <div 
-              className="w-full bg-blue-500 rounded-t-sm"
-              style={{ height: `${(height / maxBarHeight) * 100}%` }}
+              className="w-8 rounded-t-md transition-all duration-500 ease-in-out" 
+              style={{ 
+                height: `${height}px`, 
+                backgroundColor: "var(--light)",
+                minHeight: '10px',
+                maxHeight: '80%'
+              }}
             ></div>
-            <span className="text-xs mt-1">Cat {i+1}</span>
+            <span className="text-xs mt-2 text-center" style={{ color: "var(--foreground)" }}>
+              {categories[index]}
+            </span>
           </div>
         ))}
       </div>
@@ -75,7 +111,40 @@ function BarChart({ merchantId }: { merchantId: string }) {
 }
 
 function LineGraph({ merchantId }: { merchantId: string }) {
-  // Placeholder for a line graph
+  // Use state to store consistent random data
+  const [points, setPoints] = useState<{x: number, y: number}[]>([]);
+  
+  useEffect(() => {
+    // Create a simple hash from merchantId to get consistent numbers
+    const hashCode = (s: string) => {
+      let h = 0;
+      for(let i = 0; i < s.length; i++)
+        h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+      return Math.abs(h);
+    };
+    
+    const baseSeed = hashCode(merchantId);
+    let currentSeed = baseSeed;
+    const getRandom = (min: number, max: number) => {
+      const x = Math.sin(currentSeed++) * 10000;
+      return min + (x - Math.floor(x)) * (max - min);
+    };
+    
+    // Generate random points for the line graph
+    // X coordinates are fixed and evenly spaced
+    const xCoords = [0, 15, 30, 45, 60, 75, 90];
+    // Y coordinates are random between 10 (highest point) and 40 (lowest point)
+    const newPoints = xCoords.map(x => ({
+      x,
+      y: getRandom(10, 40)
+    }));
+    
+    setPoints(newPoints);
+  }, [merchantId]);
+
+  // Generate the points string for the polyline
+  const pointsString = points.map(p => `${p.x},${p.y}`).join(' ');
+
   return (
     <div className="h-full flex flex-col">
       <h3 className="text-sm mb-2">Performance Trends ({merchantId})</h3>
@@ -88,21 +157,25 @@ function LineGraph({ merchantId }: { merchantId: string }) {
           <line x1="0" y1="40" x2="100" y2="40" stroke="#ddd" strokeWidth="0.5" />
           
           {/* Line */}
-          <polyline 
-            points="0,35 15,25 30,30 45,15 60,20 75,10 90,22" 
-            fill="none" 
-            stroke="#3B82F6" 
-            strokeWidth="2"
-          />
+          {points.length > 0 && (
+            <polyline 
+              points={pointsString}
+              fill="none" 
+              stroke="var(--foreground)" 
+              strokeWidth="1"
+            />
+          )}
           
           {/* Points */}
-          <circle cx="0" cy="35" r="1.5" fill="#3B82F6" />
-          <circle cx="15" cy="25" r="1.5" fill="#3B82F6" />
-          <circle cx="30" cy="30" r="1.5" fill="#3B82F6" />
-          <circle cx="45" cy="15" r="1.5" fill="#3B82F6" />
-          <circle cx="60" cy="20" r="1.5" fill="#3B82F6" />
-          <circle cx="75" cy="10" r="1.5" fill="#3B82F6" />
-          <circle cx="90" cy="22" r="1.5" fill="#3B82F6" />
+          {points.map((point, i) => (
+            <circle 
+              key={i}
+              cx={point.x} 
+              cy={point.y} 
+              r="1.5" 
+              fill="var(--light)" 
+            />
+          ))}
         </svg>
       </div>
     </div>
@@ -110,13 +183,47 @@ function LineGraph({ merchantId }: { merchantId: string }) {
 }
 
 function StatsDisplay({ merchantId }: { merchantId: string }) {
-  // Placeholder for key statistics
-  const stats = [
-    { label: 'Total Revenue', value: `$${(Math.random() * 10000).toFixed(2)}` },
-    { label: 'Customers', value: Math.floor(Math.random() * 500) },
-    { label: 'Avg Order Value', value: `$${(Math.random() * 100).toFixed(2)}` },
-    { label: 'Conversion Rate', value: `${(Math.random() * 10).toFixed(2)}%` }
-  ];
+  // Use useRef to maintain consistent data across re-renders
+  const [stats, setStats] = useState<Array<{label: string, value: string}>>([]);
+  
+  // Generate consistent random stats based on merchantId
+  useEffect(() => {
+    // Create a simple hash from merchantId to get consistent numbers
+    const hashCode = (s: string) => {
+      let h = 0;
+      for(let i = 0; i < s.length; i++)
+        h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+      return Math.abs(h);
+    };
+    
+    const baseSeed = hashCode(merchantId);
+    let currentSeed = baseSeed;
+    const getRandom = (min: number, max: number) => {
+      const x = Math.sin(currentSeed++) * 10000;
+      return min + (x - Math.floor(x)) * (max - min);
+    };
+    
+    const newStats = [
+      { 
+        label: 'Total Revenue', 
+        value: `$${getRandom(5000, 15000).toFixed(2)}` 
+      },
+      { 
+        label: 'Customers', 
+        value: Math.floor(getRandom(100, 500)).toString() 
+      },
+      { 
+        label: 'Avg Order Value', 
+        value: `$${getRandom(50, 150).toFixed(2)}` 
+      },
+      { 
+        label: 'Conversion Rate', 
+        value: `${getRandom(5, 15).toFixed(2)}%` 
+      }
+    ];
+    
+    setStats(newStats);
+  }, [merchantId]);
 
   return (
     <div className="h-full flex flex-col">
@@ -125,10 +232,14 @@ function StatsDisplay({ merchantId }: { merchantId: string }) {
         {stats.map((stat, i) => (
           <div 
             key={i} 
-            className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg"
+            className="p-3 rounded-lg"
+            style={{ 
+              backgroundColor: "var(--light)", 
+              color: "var(--foreground)" 
+            }}
           >
-            <p className="text-xs text-gray-500">{stat.label}</p>
-            <p className="text-lg font-bold">{stat.value}</p>
+            <p className="text-xs" style={{ color: "var(--secondary)" }}>{stat.label}</p>
+            <p className="text-lg font-bold" style={{ color: "var(--foreground)" }}>{stat.value}</p>
           </div>
         ))}
       </div>
