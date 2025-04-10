@@ -5,11 +5,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-/**
- * Get the highest order_value from the transaction_data table along with its order_id
- * @returns The highest order_value, order_id or null if not found
- */
-
 export async function topSellingItemsWeek(merchantId: string): Promise<{ 
   topSellingItems: Array<{ name: string; count: number }> | null;
   error: Error | null;
@@ -265,5 +260,56 @@ export async function bestSellingTime(merchantId: string): Promise<{
   } catch (error) {
     console.error('Failed to calculate best selling time:', error);
     return { bestSellingTime: null, error: error as Error };
+  }
+}
+
+export async function bestSellingDay(merchantId: string): Promise<{ 
+  bestSellingDay: string | null; 
+  error: Error | null; 
+}> {
+  const startDate = '2023-12-01T00:00:00';
+  const endDate = '2023-12-31T23:59:59';
+
+  try {
+    // Fetch transaction data for the merchant within the specified date range
+    const { data: transactions, error: transactionError } = await supabase
+      .from('transaction_data')
+      .select('order_time, order_value')
+      .eq('merchant_id', merchantId)
+      .gte('order_time', startDate)
+      .lte('order_time', endDate);
+
+    if (transactionError) {
+      console.error('Error fetching transaction data:', transactionError);
+      return { bestSellingDay: null, error: transactionError };
+    }
+
+    if (!transactions || transactions.length === 0) {
+      console.log('No transactions found for the specified period.');
+      return { bestSellingDay: null, error: null };
+    }
+
+    // Aggregate daily order values
+    const dailyOrderCounts: Record<string, number> = {};
+    transactions.forEach(transaction => {
+      const orderDate = new Date(transaction.order_time).toISOString().split('T')[0]; // Extract date in YYYY-MM-DD format
+      dailyOrderCounts[orderDate] = (dailyOrderCounts[orderDate] || 0) + transaction.order_value;
+    });
+
+    // Find the day with the highest total order value
+    let bestDay: string | null = null;
+    let maxOrderValue = 0;
+
+    for (const [date, totalOrderValue] of Object.entries(dailyOrderCounts)) {
+      if (totalOrderValue > maxOrderValue) {
+        bestDay = date;
+        maxOrderValue = totalOrderValue;
+      }
+    }
+
+    return { bestSellingDay: bestDay, error: null };
+  } catch (error) {
+    console.error('Failed to calculate best selling day:', error);
+    return { bestSellingDay: null, error: error as Error };
   }
 }
