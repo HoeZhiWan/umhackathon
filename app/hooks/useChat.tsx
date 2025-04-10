@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Message, GeminiMessage, FunctionResult } from '../types/chat';
 import { getMerchantSuggestions } from '../gemini/suggestion-generator';
 import { merchants } from '../components/MerchantSelector';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface UseChatProps {
   initialMerchantId: string;
@@ -20,9 +21,13 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
   const [conversationHistory, setConversationHistory] = useState<GeminiMessage[]>([]);
   const processedResultsRef = useRef<Set<string>>(new Set());
   
-  // Update to use function from the suggestion module
+  // Use the language context
+  const { language, languageName } = useLanguage();
+  const prevLanguageRef = useRef(language);
+  
+  // Update to use function from the suggestion module with language
   const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>(
-    getMerchantSuggestions(merchantId)
+    getMerchantSuggestions(merchantId, language)
   );
 
   // Auto-scroll to bottom of messages
@@ -47,9 +52,9 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
     
     setMessages((prev) => [...prev, systemMessage]);
     
-    // Reset conversation history and get new merchant-specific suggestions
+    // Reset conversation history and get new merchant-specific suggestions with current language
     setConversationHistory([]);
-    setSuggestedPrompts(getMerchantSuggestions(newMerchantId));
+    setSuggestedPrompts(getMerchantSuggestions(newMerchantId, language));
   };
 
   // When merchantId changes externally
@@ -59,6 +64,38 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
       handleMerchantChange(initialMerchantId);
     }
   }, [initialMerchantId]);
+  
+  // Handle language changes
+  useEffect(() => {
+    if (language !== prevLanguageRef.current) {
+      prevLanguageRef.current = language;
+      
+      // Add a system message about the language change
+      const systemMessage: Message = {
+        id: Date.now().toString(),
+        text: `Switched to ${languageName}`,
+        sender: 'system',
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, systemMessage]);
+      
+      // If there are existing messages, add a note that future responses will be in the new language
+      if (messages.length > 0) {
+        const noteMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: `I'll respond in ${languageName} from now on.`,
+          sender: 'bot',
+          timestamp: new Date(),
+        };
+        
+        setMessages((prev) => [...prev, noteMessage]);
+      }
+      
+      // Update suggestions for the new language
+      setSuggestedPrompts(getMerchantSuggestions(merchantId, language));
+    }
+  }, [language, languageName, merchantId, messages.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +118,7 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
     setIsLoading(true);
 
     try {
-      // Call the API route with conversation history
+      // Call the API route with conversation history and language
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -90,6 +127,7 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
         body: JSON.stringify({ 
           message: userMessage.text, 
           merchantId,
+          language: language,  // Pass the current language to the API
           history: conversationHistory // Send the current conversation history
         }),
       });
@@ -217,6 +255,7 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
     handleSubmit,
     messagesEndRef,
     suggestedPrompts,
-    handleSuggestionClick
+    handleSuggestionClick,
+    language // Add language to the returned values
   };
 }

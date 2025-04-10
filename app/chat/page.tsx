@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import ChatInterface from "../components/ChatInterface";
 import MerchantSelector from "../components/MerchantSelector";
+import LanguageSelector from "../components/LanguageSelector";
 import DataWindow from "../components/DataWindow";
 
 // Define the window type for type safety
@@ -130,8 +131,9 @@ export default function ChatPage() {
   return (
     <div className="min-h-screen flex flex-col items-center p-4">
       <div className="w-full max-w-6xl flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">404 Brain Not Found</h1>
+        <h1 className="text-2xl font-bold">404 🧠 Brain Not Found</h1>
         <div className="flex items-center gap-4">
+          <LanguageSelector />
           <MerchantSelector 
             currentMerchantId={merchantId}
             onMerchantChange={setMerchantId}

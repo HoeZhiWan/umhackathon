@@ -49,7 +49,7 @@ export function dummy_getWeatherForecast(location: string, days: number = 3, uni
 export async function get_top_selling_items(time_period: 'week' | 'month') {
   try {
     // Get the merchant ID automatically from the store
-    const { merchantId, merchantName } = getCurrentMerchant();
+    const { merchantId, merchantName } = await getCurrentMerchant();
     
     let result;
     
@@ -61,31 +61,33 @@ export async function get_top_selling_items(time_period: 'week' | 'month') {
       return {
         success: false,
         error: 'Invalid time period. Please use "week" or "month".',
-        item: null
+        items: null
       };
     }
 
     if (result.error) {
       return {
         success: false,
-        error: `Error retrieving top selling item: ${result.error.message}`,
-        item: null
+        error: `Error retrieving top selling items: ${result.error.message}`,
+        items: null
       };
     }
 
+    const topItems = result.topSellingItems || [];
+    
     return {
       success: true,
       time_period,
-      merchant_name: merchantName, // Send the name instead of ID to Gemini
-      item: result.topSellingItem || 'No data available',
+      merchant_name: merchantName,
+      items: topItems.length > 0 ? topItems : 'No data available',
       clientAction: {
         type: "ADD_DATA_WINDOW",
         params: {
           visualization_type: 'stats',
-          title: `${merchantName}'s Top Selling Item (${time_period})`,
+          title: `${merchantName}'s Top 5 Selling Items (${time_period})`,
           id: `top-selling-${time_period}-${Date.now()}`,
           data: {
-            topItem: result.topSellingItem || 'No data available',
+            topItems: topItems.length > 0 ? topItems : 'No data available',
             period: time_period,
             merchant: merchantName
           }
@@ -96,8 +98,8 @@ export async function get_top_selling_items(time_period: 'week' | 'month') {
     console.error('Error in get_top_selling_items:', error);
     return {
       success: false,
-      error: 'Failed to retrieve top selling item',
-      item: null
+      error: 'Failed to retrieve top selling items',
+      items: null
     };
   }
 }

@@ -92,10 +92,29 @@ async function handleToolCall(
   return { finalResponse, updatedHistory, functionCallPart };
 }
 
-export async function generateGeminiResponse(userInput: string, conversationHistory: ConversationMessage[] = []): Promise<GeminiResponse | null> {
+export async function generateGeminiResponse(
+  userInput: string, 
+  conversationHistory: ConversationMessage[] = [], 
+  language: string = 'en'
+): Promise<GeminiResponse | null> {
   try {
     const genAI = new GoogleGenAI({apiKey: API_KEY});
     const config = getGeminiConfig();
+
+    // Add language instruction if not English
+    if (language !== 'en') {
+      const languageNames: Record<string, string> = {
+        'ms': 'Malay (Bahasa Melayu)',
+        'zh': 'Chinese (中文)',
+        'ta': 'Tamil (தமிழ்)'
+      };
+      
+      const languageName = languageNames[language] || language;
+      
+      // Add language instruction to config
+      config.systemInstruction = (config.systemInstruction || '') + 
+        `\n\nPlease respond in ${languageName} language.`;
+    }
 
     // Create a new message for the current user input
     const newUserMessage: ConversationMessage = {
@@ -168,18 +187,30 @@ export async function generateGeminiResponse(userInput: string, conversationHist
     updatedHistory.push(modelResponseMessage);
 
     // Generate suggested follow-up prompts using the dedicated module
-    const suggestedPrompts = await generateSuggestions(updatedHistory, genAI, API_KEY);
+    const suggestedPrompts = await generateSuggestions(updatedHistory, genAI, API_KEY, language);
 
     return {
       type: 'text',
       message: textResponse,
       functionResults: functionResults.length > 0 ? functionResults : null,
-      history: updatedHistory, // Return the updated conversation history
-      suggestedPrompts: suggestedPrompts, // Include suggested prompts
+      history: updatedHistory,
+      suggestedPrompts: suggestedPrompts,
     };
 
   } catch (error) {
     console.error('Error generating response:', error);
     return null;
   }
+}
+
+// Helper function to get full language name from code
+function getLanguageName(code: string): string {
+  const languages: Record<string, string> = {
+    'en': 'English',
+    'ms': 'Malay',
+    'zh': 'Chinese',
+    'ta': 'Tamil'
+  };
+  
+  return languages[code] || 'English';
 }

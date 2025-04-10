@@ -14,10 +14,25 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Update the server-side store
+    // Update merchant in cookie store
     setCurrentMerchant(merchantId, merchantName);
     
-    return NextResponse.json({ success: true });
+    // Create a response
+    const response = NextResponse.json({ success: true });
+    
+    // Also set the cookies directly on the response for immediate effect
+    response.cookies.set(
+      'merchant_id', 
+      merchantId, 
+      { path: '/', httpOnly: false, maxAge: 60 * 60 * 24 * 7 }
+    );
+    response.cookies.set(
+      'merchant_name', 
+      merchantName, 
+      { path: '/', httpOnly: false, maxAge: 60 * 60 * 24 * 7 }
+    );
+    
+    return response;
   } catch (error) {
     console.error('Error setting merchant:', error);
     return NextResponse.json(
