@@ -1,4 +1,4 @@
-import { topSellingItemsWeek, topSellingItemsMonth } from '../actions/sql';
+import { topSellingItemsWeek, topSellingItemsMonth, salesByWeek } from '../actions/sql';
 import { getCurrentMerchant } from '../lib/merchant-store';
 
 // Dummy weather function implementation
@@ -139,4 +139,62 @@ export function display_data_window(visualization_type: 'chart' | 'graph' | 'sta
       }
     }
   };
+}
+
+// Function to get weekly sales data
+export async function get_weekly_sales() {
+  try {
+    // Get the merchant ID automatically from the store
+    const { merchantId, merchantName } = await getCurrentMerchant();
+
+    // Fetch weekly sales data
+    const { weeklySales, error } = await salesByWeek(merchantId);
+
+    if (error) {
+      return {
+        success: false,
+        error: `Error retrieving weekly sales: ${error.message}`,
+        weeklySales: null,
+      };
+    }
+
+    if (!weeklySales || weeklySales.length === 0) {
+      return {
+        success: true,
+        message: `No sales data was found for ${merchantName} during the specified period.`,
+        weeklySales: [],
+      };
+    }
+
+    // Format the weekly sales data into a chatbot-friendly response
+    const formattedSales = weeklySales.map(
+      (week) => `Week starting on ${week.week}: Total Sales = $${week.totalSales.toFixed(2)}`
+    ).join('\n');
+
+    return {
+      success: true,
+      merchant_name: merchantName,
+      message: `Here is the weekly sales data for ${merchantName}:\n${formattedSales}`,
+      weeklySales,
+      clientAction: {
+        type: "ADD_DATA_WINDOW",
+        params: {
+          visualization_type: 'stats',
+          title: `${merchantName}'s Weekly Sales`,
+          id: `weekly-sales-${Date.now()}`,
+          data: {
+            weeklySales,
+            merchant: merchantName,
+          },
+        },
+      },
+    };
+  } catch (error) {
+    console.error('Error in get_weekly_sales:', error);
+    return {
+      success: false,
+      error: 'Failed to retrieve weekly sales data',
+      weeklySales: null,
+    };
+  }
 }

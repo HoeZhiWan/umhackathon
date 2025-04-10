@@ -80,5 +80,14 @@ export const getFunctionDeclarations = (): FunctionDeclaration[] => {
         required: ['time_period']
       }
     },
+    {
+      name: 'get_weekly_sales',
+      description: 'Returns the total sales for a merchant aggregated by week',
+      parameters: {
+        type: Type.OBJECT,
+        properties: {},
+        required: []
+      }
+    },
   ];
 }
