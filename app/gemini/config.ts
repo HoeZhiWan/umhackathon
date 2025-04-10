@@ -44,6 +44,16 @@ CONSTRAINTS:
 - Don't number or prefix suggestions
 - No quotation marks or bullet points
 
+CAPABILITIES: Suggest follow-up questions related to:
+- Sales analytics (e.g., top items, peak hours)
+- Performance metrics (e.g., order volume trends)
+- Competitive positioning in the marketplace
+- Customer behavior patterns and preferences
+- Optimization opportunities for menu or pricing
+- Seasonal trends and promotional planning
+- Operational efficiency improvements
+- Geographic performance variations
+
 CONTEXT: The merchant uses analytics tools to track sales, customer data, performance metrics, and market positioning.`;
 
 // Model configuration

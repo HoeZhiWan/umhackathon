@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, animated } from 'react-spring';
+import { motion } from 'motion/react';
 
 interface SuggestionChipsProps {
   suggestions: string[];
@@ -20,22 +20,15 @@ export default function SuggestionChips({
   // Use different styling for new conversation vs ongoing
   const chipStyle = isNewConversation
     ? {
-        backgroundColor: "var(--light)",
-        color: "var(--primary)",
-        border: "1px solid var(--secondary)"
+        backgroundColor: "var(--secondary)",
+        color: "var(--light)",
+        border: "1px solid var(--primary)"
       }
     : {
         backgroundColor: "var(--light)",
         color: "var(--primary)",
         border: "1px solid var(--secondary)"
       };
-
-  // Add animations for suggestions
-  const transitions = useTransition(suggestions, {
-    from: { opacity: 0, transform: 'translateY(10px)' },
-    enter: { opacity: 1, transform: 'translateY(0px)' },
-    trail: 100 // Stagger effect
-  });
 
   return (
     <div className={`my-3 flex flex-wrap gap-2 ${isNewConversation ? 'mt-6' : 'mt-3'}`}>
@@ -45,18 +38,25 @@ export default function SuggestionChips({
         </div>
       )}
       
-      {transitions((style, suggestion, _, index) => (
-        <animated.button
+      {suggestions.map((suggestion, index) => (
+        <motion.button
           key={index}
-          style={style}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.05 }} // Stagger effect
+          whileHover={{ 
+            scale: 1.05,
+            boxShadow: "0px 3px 8px rgba(0, 0, 0, 0.1)"
+          }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => onSuggestionClick(suggestion)}
-          className="px-3 py-1.5 rounded-full text-sm transition-colors hover:opacity-80"
+          className="px-3 py-1.5 rounded-full text-sm transition-colors hover:opacity-80 cursor-pointer"
           disabled={isLoading}
         >
           <span style={chipStyle} className="px-3 py-1.5 rounded-full block">
             {suggestion}
           </span>
-        </animated.button>
+        </motion.button>
       ))}
     </div>
   );

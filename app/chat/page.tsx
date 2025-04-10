@@ -140,7 +140,7 @@ export default function ChatPage() {
             <button 
               onClick={() => addDataWindow('chart')} 
               disabled={dataWindows.length >= 5}
-              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               style={{ backgroundColor: "var(--info)" }}
               title="Add Chart"
             >
@@ -149,7 +149,7 @@ export default function ChatPage() {
             <button 
               onClick={() => addDataWindow('graph')} 
               disabled={dataWindows.length >= 5}
-              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               style={{ backgroundColor: "var(--info)" }}
               title="Add Graph"
             >
@@ -158,7 +158,7 @@ export default function ChatPage() {
             <button 
               onClick={() => addDataWindow('stats')} 
               disabled={dataWindows.length >= 5}
-              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               style={{ backgroundColor: "var(--info)" }}
               title="Add Stats"
             >
@@ -195,7 +195,7 @@ export default function ChatPage() {
               <span className="font-medium">{window.title}</span>
               <button 
                 onClick={() => removeDataWindow(window.id)} 
-                className="text-danger hover:text-red-700"
+                className="text-danger hover:text-red-700 cursor-pointer"
                 title="Remove Window"
               >
                 ✕

@@ -22,7 +22,7 @@ export default function ChatInput({ inputValue, setInputValue, handleSubmit, isL
         <button
           type="submit"
           disabled={isLoading || !inputValue.trim()}
-          className="px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
           style={{ backgroundColor: "var(--primary)", color: "var(--light)" }}
         >
           Send

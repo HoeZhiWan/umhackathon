@@ -1,6 +1,7 @@
 "use client";
 import { Message } from "../../types/chat";
 import React from "react";
+import { motion } from 'motion/react';
 
 interface ChatMessageProps {
   message: Message;
@@ -78,21 +79,53 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     });
   };
 
+  // Determine message alignment class based on sender
+  const messageAlignmentClass = message.sender === 'user' 
+    ? 'ml-auto text-right' 
+    : message.sender === 'system'
+      ? 'mx-auto text-center' // Center system messages
+      : 'mr-auto'; // Bot messages stay left-aligned
+
+  // Determine animation properties based on sender
+  const animationProps = {
+    initial: { 
+      opacity: 0, 
+      y: 10,
+      x: message.sender === 'user' ? 20 : message.sender === 'system' ? 0 : -20
+    },
+    animate: { 
+      opacity: 1, 
+      y: 0,
+      x: 0
+    },
+    transition: { 
+      duration: 0.3,
+      ease: "easeOut"
+    }
+  };
+
   return (
-    <div 
-      className={`mb-4 ${message.sender === 'user' ? 'ml-auto text-right' : 'mr-auto'}`}
+    <motion.div 
+      className={`mb-4 ${messageAlignmentClass}`}
+      {...animationProps}
     >
       <div 
         className={`inline-block p-3 rounded-lg max-w-[80%] ${
           message.sender === 'user' 
             ? 'rounded-tr-none' 
             : message.sender === 'system'
-              ? 'italic'
+              ? 'rounded-none bg-opacity-70' // Different styling for system
               : 'rounded-tl-none'
         }`}
         style={{
-          backgroundColor: message.sender === 'user' ? "var(--secondary)" : "var(--light)",
-          color: message.sender === 'user' ? "var(--light)" : "var(--dark)"
+          backgroundColor: message.sender === 'user' 
+            ? "var(--secondary)" 
+            : message.sender === 'system'
+              ? "var(--info)" // Different background for system messages
+              : "var(--light)",
+          color: message.sender === 'user' || message.sender === 'system' 
+            ? "var(--light)" 
+            : "var(--dark)"
         }}
       >
         {formatText(message.text)}
@@ -100,6 +133,6 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       <div className="text-xs mt-1" style={{ color: "var(--light)" }}>
         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
       </div>
-    </div>
+    </motion.div>
   );
 }

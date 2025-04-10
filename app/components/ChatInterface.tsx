@@ -29,7 +29,10 @@ export default function ChatInterface({ merchantId, onAddDataWindow }: ChatInter
 
   return (
     <div className="flex flex-col w-full h-full rounded-lg overflow-hidden" style={{ backgroundColor: "var(--color-window)" }}>
-      <div className="flex-1 p-4 overflow-y-auto" style={{ backgroundColor: "var(--color-window)", color: "var(--foreground)" }}>
+      <div 
+        className="flex-1 p-4 overflow-y-auto relative" 
+        style={{ backgroundColor: "var(--color-window)", color: "var(--foreground)" }}
+      >
         {isNewConversation ? (
           <>
             <EmptyState />
@@ -42,9 +45,11 @@ export default function ChatInterface({ merchantId, onAddDataWindow }: ChatInter
           </>
         ) : (
           <>
-            {messages.map((message: Message) => (
-              <ChatMessage key={message.id} message={message} />
-            ))}
+            <div className="space-y-4">
+              {messages.map((message: Message) => (
+                <ChatMessage key={message.id} message={message} />
+              ))}
+            </div>
             
             {isLoading && <LoadingIndicator />}
             
