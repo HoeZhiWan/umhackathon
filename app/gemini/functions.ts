@@ -216,8 +216,8 @@ export async function get_weekly_sales() {
 
     // Format the data for visualization
     const lineData = weeklySales.map(item => ({
-      name: new Date(item.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      value: parseFloat(item.total_sales)
+      name: new Date(item.week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      value: parseFloat(item.totalSales.toString())
     }));
 
     // Display the data in a line graph visualization

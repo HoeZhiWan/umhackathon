@@ -136,7 +136,7 @@ button:not([disabled]) {
  }
   body {
     @apply bg-background text-foreground;
-    font-family:  'Poppins', Arial, Helvetica, sans-serif;
+    font-family: 'Poppins', Arial, Helvetica, sans-serif;
     font-family: var(--font-sans); /* Use Poppins globally */
  }
 }
