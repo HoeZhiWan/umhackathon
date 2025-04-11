@@ -131,7 +131,9 @@ export default function ChatPage() {
   return (
     <div className="min-h-screen flex flex-col items-center p-4">
       <div className="w-full max-w-6xl flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">404 🧠 Brain Not Found</h1>
+        <h1 className="text-2xl font-bold"
+          style={{ fontFamily: "Orbitron, sans-serif", fontSize:"1.2rem"}}>
+          Team 404 Brain Not Found</h1>
         <div className="flex items-center gap-4">
           <LanguageSelector />
           <MerchantSelector 
@@ -140,7 +142,7 @@ export default function ChatPage() {
           />
           <div className="flex gap-2">
             <button 
-              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="text-light px-3 py-1 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               style={{ backgroundColor: "var(--info)" }}
               title="Chart windows can only be created by the AI assistant"
               disabled={true} // No longer allow manual creation without IDs
@@ -148,7 +150,7 @@ export default function ChatPage() {
               + Chart
             </button>
             <button 
-              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="text-light px-3 py-1 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               style={{ backgroundColor: "var(--info)" }}
               title="Graph windows can only be created by the AI assistant"
               disabled={true} // No longer allow manual creation without IDs
@@ -156,7 +158,7 @@ export default function ChatPage() {
               + Graph
             </button>
             <button 
-              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="text-light px-3 py-1 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               style={{ backgroundColor: "var(--info)" }}
               title="Stats windows can only be created by the AI assistant" 
               disabled={true} // No longer allow manual creation without IDs
@@ -169,9 +171,9 @@ export default function ChatPage() {
 
       <div className={`grid ${gridClass} gap-4 w-full max-w-6xl h-[calc(100vh-120px)]`}>
         {/* Chat window is always in the center (when there are enough windows) */}
-        <div className={`border border-secondary rounded-lg overflow-hidden h-full ${chatArea}`}>
-          <div className="p-2 border-b border-secondary flex items-center " style={{ backgroundColor: "var(--light)"}}>
-            <span className="font-medium">Chat Assistant</span>
+        <div className={`border border-white rounded-2xl overflow-hidden h-full shadow-xl ${chatArea}`}>
+          <div className="p-2 border-white border-secondary flex items-center" style={{ backgroundColor: "var(--light)"}}>
+            <span className="font-medium" style={{paddingLeft:"10px"}}>Chat Assistant</span>
           </div>
           <div className="h-[calc(100%-2.5rem)]">
             <ChatInterface 
@@ -185,10 +187,10 @@ export default function ChatPage() {
         {dataWindows.map((window, index) => (
           <div 
             key={window.id} 
-            className={`border border-secondary rounded-lg overflow-hidden ${dataAreas[index] || ""}`}
+            className={`border-white rounded-2xl overflow-hidden shadow-xl ${dataAreas[index] || ""}`}
           >
             <div 
-              className="p-2 border-b border-secondary flex justify-between items-center"
+              className="p-2 border-b border-white flex justify-between items-center"
               style={{ backgroundColor: "var(--light)", color: "var(--foreground)" }}
             >
               <span className="font-medium">{window.title}</span>

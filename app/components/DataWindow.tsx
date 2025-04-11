@@ -147,7 +147,7 @@ function BarChart({ merchantId }: { merchantId: string }) {
   }, [merchantId]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col shadow-inner">
       <h3 className="text-sm mb-2">Sales by Category ({merchantId})</h3>
       <div className="flex-1 flex items-end justify-around">
         {bars.map((height, index) => (
