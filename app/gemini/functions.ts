@@ -109,6 +109,21 @@ export async function get_top_selling_items(time_period: 'week' | 'month') {
 
     const topItems = result.topSellingItems || [];
     
+    // Structure data for visualization
+    const formattedItems = topItems.map(item => ({
+      name: item.name,
+      count: item.count
+    }));
+    
+    // Automatically display the data in a visualization
+    if (formattedItems.length > 0) {
+      display_data_window('chart', `Top Selling Items (${time_period})`, {
+        topItems: formattedItems,
+        period: time_period,
+        merchant: merchantName
+      });
+    }
+    
     return {
       success: true,
       time_period,
@@ -126,7 +141,18 @@ export async function get_top_selling_items(time_period: 'week' | 'month') {
 }
 
 // Function to display data visualization windows
-export function display_data_window(visualization_type: 'chart' | 'graph' | 'stats', title?: string) {
+export function display_data_window(
+  visualization_type: 'chart' | 'graph' | 'stats', 
+  title?: string,
+  data?: {
+    chartData?: Array<{ name: string; value: number }>;
+    lineData?: Array<{ name: string; value: number }>;
+    statData?: Array<{ label: string; value: string }>;
+    topItems?: Array<{ name: string; count: number }> | string;
+    period?: string;
+    merchant?: string;
+  }
+) {
   // This function returns a structured response with a client action
   const windowType = visualization_type as 'chart' | 'graph' | 'stats';
   
@@ -156,7 +182,8 @@ export function display_data_window(visualization_type: 'chart' | 'graph' | 'sta
       params: {
         visualization_type: windowType,
         title: windowTitle,
-        id: resultId // Include the ID in the params as well
+        id: resultId,
+        data // Include the data in the client action
       }
     }
   };
@@ -185,6 +212,20 @@ export async function get_weekly_sales() {
         merchant_name: merchantName,
         weeklySales: [],
       };
+    }
+
+    // Format the data for visualization
+    const lineData = weeklySales.map(item => ({
+      name: new Date(item.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      value: parseFloat(item.total_sales)
+    }));
+
+    // Display the data in a line graph visualization
+    if (lineData.length > 0) {
+      display_data_window('graph', `Weekly Sales Trends`, {
+        lineData,
+        merchant: merchantName
+      });
     }
 
     return {
@@ -234,6 +275,32 @@ export async function get_best_selling_day() {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
+    });
+
+    // Create statistics data for visualization
+    const statData = [
+      {
+        label: 'Best Selling Day',
+        value: date.toLocaleDateString('en-US', { weekday: 'long' })
+      },
+      {
+        label: 'Date',
+        value: date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      },
+      {
+        label: 'Merchant',
+        value: merchantName
+      },
+      {
+        label: 'Performance',
+        value: '↑ Higher Than Average'
+      }
+    ];
+
+    // Display the data in a stats visualization
+    display_data_window('stats', `Best Selling Day Analysis`, {
+      statData,
+      merchant: merchantName
     });
 
     return {

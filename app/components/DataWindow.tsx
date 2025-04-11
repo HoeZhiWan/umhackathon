@@ -1,11 +1,60 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent
+} from "@/app/components/ui/chart";
+import { 
+  BarChart as RechartsBarChart,
+  Bar, 
+  XAxis, 
+  YAxis, 
+  ResponsiveContainer, 
+  LineChart as RechartsLineChart,
+  Line,
+  CartesianGrid,
+  Tooltip,
+  Legend
+} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
+
+// Define proper typings for our visualization data
+interface TopSellingItem {
+  name: string;
+  count: number;
+}
+
+interface ChartData {
+  name: string;
+  value: number;
+}
+
+interface LineData {
+  name: string;
+  value: number;
+}
+
+interface StatData {
+  label: string;
+  value: string;
+}
 
 interface DataWindowProps {
   type: 'chart' | 'graph' | 'stats';
   merchantId: string;
-  data?: any;
+  data?: {
+    topItems?: TopSellingItem[] | string;
+    period?: string;
+    merchant?: string;
+    chartData?: ChartData[];
+    lineData?: LineData[];
+    statData?: StatData[];
+    // Add any other data types you might need
+  };
   title?: string;
 }
 
@@ -36,26 +85,46 @@ export default function DataWindow({ type, merchantId, data, title }: DataWindow
 
     // Handle top selling items data if available
     if (data?.topItems) {
-      return <TopSellingItemsDisplay items={data.topItems} period={data.period} merchant={data.merchant} />;
+      return <TopSellingItemsDisplay 
+        items={data.topItems} 
+        period={data.period || 'week'} 
+        merchant={data.merchant || merchantId} 
+      />;
     }
 
     switch (type) {
       case 'chart':
-        return <BarChart merchantId={merchantId} />;
+        return <BarChartDisplay 
+          data={data?.chartData} 
+          merchantId={merchantId} 
+        />;
       case 'graph':
-        return <LineGraph merchantId={merchantId} />;
+        return <LineGraphDisplay 
+          data={data?.lineData} 
+          merchantId={merchantId} 
+        />;
       case 'stats':
-        return <StatsDisplay merchantId={merchantId} />;
+        return <StatsDisplay 
+          data={data?.statData} 
+          merchantId={merchantId} 
+        />;
       default:
         return <div>Unknown data type</div>;
     }
   };
 
   return (
-    <div className="h-full">
-      {title && <h3 className="text-sm mb-2 font-medium">{title}</h3>}
-      {renderContent()}
-    </div>
+    <Card className="w-full h-full">
+      <CardHeader className="p-4 pb-2">
+        <CardTitle className="text-md font-medium">
+          {title || (type === 'chart' ? 'Sales by Category' : 
+                    type === 'graph' ? 'Performance Trends' : 'Key Metrics')}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 pt-0 h-[calc(100%-3rem)]">
+        {renderContent()}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -74,8 +143,6 @@ function TopSellingItemsDisplay({
     return <div className="text-center py-4 text-gray-500">{items}</div>;
   }
 
-  const getColor = () => period === 'week' ? '#FDE68A' : '#A7F3D0';
-  const getTextColor = () => period === 'week' ? '#92400E' : '#065F46';
   const getPeriodName = () => period === 'week' ? 'Weekly' : 'Monthly';
 
   return (
@@ -86,21 +153,19 @@ function TopSellingItemsDisplay({
             {items.map((item, index) => (
               <div 
                 key={index} 
-                className="flex items-center justify-between p-2 rounded-lg"
-                style={{ backgroundColor: index % 2 === 0 ? 'rgba(0,0,0,0.03)' : 'transparent' }}
+                className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                style={{ backgroundColor: index % 2 === 0 ? 'var(--muted)' : 'transparent' }}
               >
                 <div className="flex items-center">
                   <div 
-                    className="w-6 h-6 rounded-full flex items-center justify-center mr-3 text-xs font-bold"
-                    style={{ backgroundColor: getColor(), color: getTextColor() }}
+                    className="w-6 h-6 rounded-full flex items-center justify-center mr-3 text-xs font-bold bg-primary text-primary-foreground"
                   >
                     {index + 1}
                   </div>
                   <span className="font-medium">{item.name}</span>
                 </div>
                 <div 
-                  className="px-3 py-1 rounded-full text-sm"
-                  style={{ backgroundColor: getColor(), color: getTextColor() }}
+                  className="px-3 py-1 rounded-full text-sm bg-secondary text-secondary-foreground"
                 >
                   {item.count} sold
                 </div>
@@ -115,195 +180,249 @@ function TopSellingItemsDisplay({
   );
 }
 
-function BarChart({ merchantId }: { merchantId: string }) {
-  // Use state to store consistent random data
-  const [bars, setBars] = useState<number[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const maxBarHeight = 100;
+// Adjusting the chart container to ensure it fits properly within the CardContent
+function BarChartDisplay({ 
+  data,
+  merchantId 
+}: { 
+  data?: Array<ChartData>,
+  merchantId: string 
+}) {
+  // Use state to store data
+  const [chartData, setChartData] = useState<Array<ChartData>>([]);
   
   useEffect(() => {
-    // Create a simple hash from merchantId to get consistent numbers
-    const hashCode = (s: string) => {
-      let h = 0;
-      for(let i = 0; i < s.length; i++)
-        h = Math.imul(31, h) + s.charCodeAt(i) | 0;
-      return Math.abs(h);
-    };
-    
-    const baseSeed = hashCode(merchantId);
-    let currentSeed = baseSeed;
-    const getRandom = (min: number, max: number) => {
-      const x = Math.sin(currentSeed++) * 10000;
-      return min + (x - Math.floor(x)) * (max - min);
-    };
-    
-    // Generate random bar values
-    const newBars = Array(7).fill(0).map(() => Math.floor(getRandom(30, 90)));
-    setBars(newBars);
-    
-    // Define categories for the bars
-    const itemCategories = ['Food', 'Drinks', 'Dessert', 'Takeout', 'Delivery', 'Catering', 'Other'];
-    setCategories(itemCategories);
-  }, [merchantId]);
+    // If data is provided, use it
+    if (data && data.length > 0) {
+      setChartData(data);
+    } else {
+      // Otherwise generate sample data
+      const hashCode = (s: string) => {
+        let h = 0;
+        for(let i = 0; i < s.length; i++)
+          h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+        return Math.abs(h);
+      };
+      
+      const baseSeed = hashCode(merchantId);
+      let currentSeed = baseSeed;
+      const getRandom = (min: number, max: number) => {
+        const x = Math.sin(currentSeed++) * 10000;
+        return min + (x - Math.floor(x)) * (max - min);
+      };
+      
+      // Generate sample data
+      const categories = ['Food', 'Drinks', 'Dessert', 'Takeout', 'Delivery', 'Catering', 'Other'];
+      const newData = categories.map(category => ({
+        name: category,
+        value: Math.floor(getRandom(30, 90))
+      }));
+      
+      setChartData(newData);
+    }
+  }, [merchantId, data]);
+  
+  // Define chart colors
+  const chartConfig = {
+    value: { 
+      label: 'Sales', 
+      color: 'var(--primary)' 
+    },
+  };
 
   return (
-    <div className="h-full flex flex-col">
-      <h3 className="text-sm mb-2">Sales by Category ({merchantId})</h3>
-      <div className="flex-1 flex items-end justify-around">
-        {bars.map((height, index) => (
-          <div key={index} className="flex flex-col items-center">
-            <span className="text-xs mb-1" style={{ color: "var(--dark)" }}>
-              {height}%
-            </span>
-            <div 
-              className="w-8 rounded-t-md transition-all duration-500 ease-in-out" 
-              style={{ 
-                height: `${height}px`, 
-                backgroundColor: "var(--light)",
-                minHeight: '10px',
-                maxHeight: '80%'
-              }}
-            ></div>
-            <span className="text-xs mt-2 text-center" style={{ color: "var(--foreground)" }}>
-              {categories[index]}
-            </span>
-          </div>
-        ))}
-      </div>
+    <div className="h-full w-full overflow-hidden" style={{ minHeight: '200px' }}>
+      <ChartContainer config={chartConfig} className="h-full w-full">
+        <RechartsBarChart 
+          data={chartData} 
+          margin={{ top: 20, right: 20, left: 20, bottom: 40 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis 
+            dataKey="name"
+            tick={{ fontSize: 12 }}
+            tickLine={false}
+            axisLine={false}
+            height={30}
+            padding={{ left: 10, right: 10 }}
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tick={{ fontSize: 12 }}
+            width={40}
+          />
+          <ChartTooltip
+            content={<ChartTooltipContent />}
+          />
+          <ChartLegend 
+            verticalAlign="top" 
+            height={36}
+            content={<ChartLegendContent />} 
+          />
+          <Bar dataKey="value" radius={[4, 4, 0, 0]} />
+        </RechartsBarChart>
+      </ChartContainer>
     </div>
   );
 }
 
-function LineGraph({ merchantId }: { merchantId: string }) {
-  // Use state to store consistent random data
-  const [points, setPoints] = useState<{x: number, y: number}[]>([]);
-  
+// Adjusting the chart container to ensure it fits properly within the CardContent
+function LineGraphDisplay({ 
+  data,
+  merchantId 
+}: { 
+  data?: Array<LineData>,
+  merchantId: string 
+}) {
+  // Use state to store data
+  const [lineData, setLineData] = useState<Array<LineData>>([]);
+
   useEffect(() => {
-    // Create a simple hash from merchantId to get consistent numbers
-    const hashCode = (s: string) => {
-      let h = 0;
-      for(let i = 0; i < s.length; i++)
-        h = Math.imul(31, h) + s.charCodeAt(i) | 0;
-      return Math.abs(h);
-    };
-    
-    const baseSeed = hashCode(merchantId);
-    let currentSeed = baseSeed;
-    const getRandom = (min: number, max: number) => {
-      const x = Math.sin(currentSeed++) * 10000;
-      return min + (x - Math.floor(x)) * (max - min);
-    };
-    
-    // Generate random points for the line graph
-    // X coordinates are fixed and evenly spaced
-    const xCoords = [0, 15, 30, 45, 60, 75, 90];
-    // Y coordinates are random between 10 (highest point) and 40 (lowest point)
-    const newPoints = xCoords.map(x => ({
-      x,
-      y: getRandom(10, 40)
-    }));
-    
-    setPoints(newPoints);
-  }, [merchantId]);
+    // If data is provided, use it
+    if (data && data.length > 0) {
+      setLineData(data);
+    } else {
+      // Otherwise generate sample data
+      const hashCode = (s: string) => {
+        let h = 0;
+        for(let i = 0; i < s.length; i++)
+          h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+        return Math.abs(h);
+      };
+      
+      const baseSeed = hashCode(merchantId);
+      let currentSeed = baseSeed;
+      const getRandom = (min: number, max: number) => {
+        const x = Math.sin(currentSeed++) * 10000;
+        return min + (x - Math.floor(x)) * (max - min);
+      };
+      
+      // Generate sample data for a line chart
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const newData = days.map(day => ({
+        name: day,
+        value: Math.floor(getRandom(30, 90))
+      }));
+      
+      setLineData(newData);
+    }
+  }, [merchantId, data]);
 
-  // Generate the points string for the polyline
-  const pointsString = points.map(p => `${p.x},${p.y}`).join(' ');
-
+  // Define chart colors
+  const chartConfig = {
+    value: { 
+      label: 'Trend', 
+      color: 'var(--primary)' 
+    },
+  };
+  
   return (
-    <div className="h-full flex flex-col">
-      <h3 className="text-sm mb-2">Performance Trends ({merchantId})</h3>
-      <div className="flex-1 relative">
-        <svg className="w-full h-full" viewBox="0 0 100 50">
-          {/* Grid lines */}
-          <line x1="0" y1="10" x2="100" y2="10" stroke="#ddd" strokeWidth="0.5" />
-          <line x1="0" y1="20" x2="100" y2="20" stroke="#ddd" strokeWidth="0.5" />
-          <line x1="0" y1="30" x2="100" y2="30" stroke="#ddd" strokeWidth="0.5" />
-          <line x1="0" y1="40" x2="100" y2="40" stroke="#ddd" strokeWidth="0.5" />
-          
-          {/* Line */}
-          {points.length > 0 && (
-            <polyline 
-              points={pointsString}
-              fill="none" 
-              stroke="var(--foreground)" 
-              strokeWidth="1"
-            />
-          )}
-          
-          {/* Points */}
-          {points.map((point, i) => (
-            <circle 
-              key={i}
-              cx={point.x} 
-              cy={point.y} 
-              r="1.5" 
-              fill="var(--light)" 
-            />
-          ))}
-        </svg>
-      </div>
+    <div className="h-full w-full overflow-hidden" style={{ minHeight: '200px' }}>
+      <ChartContainer config={chartConfig} className="h-full w-full">
+        <RechartsLineChart 
+          data={lineData} 
+          margin={{ top: 20, right: 20, left: 20, bottom: 40 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis 
+            dataKey="name" 
+            tick={{ fontSize: 12 }}
+            tickLine={false}
+            axisLine={false}
+            height={30}
+            padding={{ left: 10, right: 10 }}
+          />
+          <YAxis 
+            tickLine={false}
+            axisLine={false}
+            tick={{ fontSize: 12 }}
+            width={40}
+          />
+          <ChartTooltip
+            content={<ChartTooltipContent />}
+          />
+          <ChartLegend 
+            verticalAlign="top" 
+            height={36}
+            content={<ChartLegendContent />} 
+          />
+          <Line 
+            type="monotone" 
+            dataKey="value" 
+            strokeWidth={2} 
+            dot={{ r: 4 }}
+            activeDot={{ r: 6 }}
+          />
+        </RechartsLineChart>
+      </ChartContainer>
     </div>
   );
 }
 
-function StatsDisplay({ merchantId }: { merchantId: string }) {
-  // Use useRef to maintain consistent data across re-renders
-  const [stats, setStats] = useState<Array<{label: string, value: string}>>([]);
+function StatsDisplay({ 
+  data,
+  merchantId 
+}: { 
+  data?: Array<StatData>,
+  merchantId: string 
+}) {
+  // Use state to store consistent data across re-renders
+  const [stats, setStats] = useState<Array<StatData>>([]);
   
-  // Generate consistent random stats based on merchantId
   useEffect(() => {
-    // Create a simple hash from merchantId to get consistent numbers
-    const hashCode = (s: string) => {
-      let h = 0;
-      for(let i = 0; i < s.length; i++)
-        h = Math.imul(31, h) + s.charCodeAt(i) | 0;
-      return Math.abs(h);
-    };
-    
-    const baseSeed = hashCode(merchantId);
-    let currentSeed = baseSeed;
-    const getRandom = (min: number, max: number) => {
-      const x = Math.sin(currentSeed++) * 10000;
-      return min + (x - Math.floor(x)) * (max - min);
-    };
-    
-    const newStats = [
-      { 
-        label: 'Total Revenue', 
-        value: `$${getRandom(5000, 15000).toFixed(2)}` 
-      },
-      { 
-        label: 'Customers', 
-        value: Math.floor(getRandom(100, 500)).toString() 
-      },
-      { 
-        label: 'Avg Order Value', 
-        value: `$${getRandom(50, 150).toFixed(2)}` 
-      },
-      { 
-        label: 'Conversion Rate', 
-        value: `${getRandom(5, 15).toFixed(2)}%` 
-      }
-    ];
-    
-    setStats(newStats);
-  }, [merchantId]);
+    // If data is provided, use it
+    if (data && data.length > 0) {
+      setStats(data);
+    } else {
+      // Otherwise generate sample data
+      const hashCode = (s: string) => {
+        let h = 0;
+        for(let i = 0; i < s.length; i++)
+          h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+        return Math.abs(h);
+      };
+      
+      const baseSeed = hashCode(merchantId);
+      let currentSeed = baseSeed;
+      const getRandom = (min: number, max: number) => {
+        const x = Math.sin(currentSeed++) * 10000;
+        return min + (x - Math.floor(x)) * (max - min);
+      };
+      
+      const newStats = [
+        { 
+          label: 'Total Revenue', 
+          value: `$${getRandom(5000, 15000).toFixed(2)}` 
+        },
+        { 
+          label: 'Customers', 
+          value: Math.floor(getRandom(100, 500)).toString() 
+        },
+        { 
+          label: 'Avg Order Value', 
+          value: `$${getRandom(50, 150).toFixed(2)}` 
+        },
+        { 
+          label: 'Conversion Rate', 
+          value: `${getRandom(5, 15).toFixed(2)}%` 
+        }
+      ];
+      
+      setStats(newStats);
+    }
+  }, [merchantId, data]);
 
   return (
     <div className="h-full flex flex-col">
-      <h3 className="text-sm mb-4">Key Metrics ({merchantId})</h3>
       <div className="grid grid-cols-2 gap-4">
         {stats.map((stat, i) => (
           <div 
             key={i} 
-            className="p-3 rounded-lg"
-            style={{ 
-              backgroundColor: "var(--dark)", 
-              color: "var(--light)" 
-            }}
+            className="p-3 rounded-lg bg-secondary text-secondary-foreground"
           >
-            <p className="text-xs" style={{ color: "var(--light)" }}>{stat.label}</p>
-            <p className="text-lg font-bold" style={{ color: "var(--background)" }}>{stat.value}</p>
+            <p className="text-xs opacity-80">{stat.label}</p>
+            <p className="text-lg font-bold">{stat.value}</p>
           </div>
         ))}
       </div>

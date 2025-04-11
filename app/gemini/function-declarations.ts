@@ -60,6 +60,64 @@ export const getFunctionDeclarations = (): FunctionDeclaration[] => {
           title: {
             type: Type.STRING,
             description: 'Title for the visualization window (optional)'
+          },
+          data: {
+            type: Type.OBJECT,
+            description: 'Data to be displayed in the visualization',
+            properties: {
+              chartData: {
+                type: Type.ARRAY,
+                description: 'Data for bar charts. Array of objects with name and value properties',
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING, description: 'Category name' },
+                    value: { type: Type.NUMBER, description: 'Numeric value' }
+                  }
+                }
+              },
+              lineData: {
+                type: Type.ARRAY,
+                description: 'Data for line graphs. Array of objects with name and value properties',
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING, description: 'X-axis label (e.g. date, time period)' },
+                    value: { type: Type.NUMBER, description: 'Y-axis value' }
+                  }
+                }
+              },
+              statData: {
+                type: Type.ARRAY,
+                description: 'Data for statistics displays. Array of objects with label and value properties',
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    label: { type: Type.STRING, description: 'Stat name/label' },
+                    value: { type: Type.STRING, description: 'Formatted stat value (e.g. "$1,234.56")' }
+                  }
+                }
+              },
+              topItems: {
+                type: Type.ARRAY,
+                description: 'Top selling items data. Array of objects with name and count properties',
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING, description: 'Item name' },
+                    count: { type: Type.NUMBER, description: 'Number of items sold' }
+                  }
+                }
+              },
+              period: {
+                type: Type.STRING,
+                description: 'Time period for the data (e.g. "week", "month")'
+              },
+              merchant: {
+                type: Type.STRING,
+                description: 'Merchant name or ID'
+              }
+            }
           }
         },
         required: ['visualization_type']

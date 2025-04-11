@@ -138,32 +138,6 @@ export default function ChatPage() {
             currentMerchantId={merchantId}
             onMerchantChange={setMerchantId}
           />
-          <div className="flex gap-2">
-            <button 
-              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              style={{ backgroundColor: "var(--info)" }}
-              title="Chart windows can only be created by the AI assistant"
-              disabled={true} // No longer allow manual creation without IDs
-            >
-              + Chart
-            </button>
-            <button 
-              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              style={{ backgroundColor: "var(--info)" }}
-              title="Graph windows can only be created by the AI assistant"
-              disabled={true} // No longer allow manual creation without IDs
-            >
-              + Graph
-            </button>
-            <button 
-              className="text-light px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              style={{ backgroundColor: "var(--info)" }}
-              title="Stats windows can only be created by the AI assistant" 
-              disabled={true} // No longer allow manual creation without IDs
-            >
-              + Stats
-            </button>
-          </div>
         </div>
       </div>
 
