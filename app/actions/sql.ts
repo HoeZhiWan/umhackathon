@@ -312,4 +312,5 @@ export async function bestSellingDay(merchantId: string): Promise<{
     console.error('Failed to calculate best selling day:', error);
     return { bestSellingDay: null, error: error as Error };
   }
+  //hheheh
 }
