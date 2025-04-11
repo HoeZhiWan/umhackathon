@@ -2,18 +2,22 @@
 
 import { useState } from "react";
 import { supabase } from "../actions/sql";
-import { topSellingItemsWeek, topSellingItemsMonth, bestSellingTime,salesByWeek, suggestItemsToSell } from "../actions/sql"
+import { topSellingItemsWeek, topSellingItemsMonth, bestSellingTime,salesByWeek, salesByMonth } from "../actions/sql"
+import { generateDescriptionAndImage } from "../actions/sql";
 
 export default function SqlPage() {
     const [weeklyItems, setWeeklyItems] = useState<Array<{ name: string; count: number }> | null>(null);
     const [monthlyItems, setMonthlyItems] = useState<Array<{ name: string; count: number }> | null>(null);
     const [bestTime, setBestTime] = useState<string | null>(null);
     const [weeklySales, setWeeklySales] = useState<Array<{ week: string; totalSales: number }> | null>(null);
+    const [monthlySales, setMonthlySales] = useState<Array<{ month: string; totalSales: number }> | null>(null);
     const [isWeeklyLoading, setIsWeeklyLoading] = useState(false);
     const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
     const [isTimeLoading, setIsTimeLoading] = useState(false);
     const [isSalesLoading, setIsSalesLoading] = useState(false);
+    const [isMonthlySalesLoading, setIsMonthlySalesLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [generatedImage, setGeneratedImage] = useState<string | null>(null);
     
     // Using the same merchant ID for consistency in testing
     const merchantId = '5b8d2';
@@ -92,6 +96,44 @@ export default function SqlPage() {
             setIsSalesLoading(false);
         }
     };
+    const fetchMonthlySales = async () => {
+        setIsMonthlySalesLoading(true);
+        setError(null);
+        try {
+            const result = await salesByMonth(merchantId);
+            console.log('Monthly sales result:', result);
+            if (result.error) {
+                setError(`Error fetching monthly sales: ${result.error.message}`);
+            } else {
+                setMonthlySales(result.monthlySales);
+            }
+        } catch (err) {
+            console.error('Error fetching monthly sales:', err);
+            setError(`Unexpected error: ${(err as Error).message}`);
+        } finally {
+            setIsSalesLoading(false);
+        }
+    };
+
+    //testing
+    const testCreateMenuItem = async () => {
+        setError(null);
+        try {
+            const itemName = "Test Item";
+            const cuisineTag = "Test Cuisine";
+            console.log("Testing createMenuItem with:", itemName, cuisineTag);
+    
+            const result = await generateDescriptionAndImage('ice cream', 'dessert');
+            if (result.imageData) {
+                setGeneratedImage(result.imageData);
+            }
+    
+            console.log('Create Menu Item result:', result);
+        } catch (err) {
+            console.error("Unexpected error in createMenuItem test:", err);
+            setError(`Unexpected error: ${(err as Error).message}`);
+        }
+    };
 
     return (
         <div className="p-6 max-w-4xl mx-auto">
@@ -130,11 +172,30 @@ export default function SqlPage() {
                 >
                     {isSalesLoading ? 'Loading...' : 'Total Sales by Week'}
                 </button>
+
+
+                {/* testing button */ }
+                <button 
+                    onClick={testCreateMenuItem}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 disabled:opacity-50"
+                >AI Create Menu Item
+                </button>
+                <button 
+                    onClick={fetchMonthlySales}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 disabled:opacity-50"
+                >Total Sales by Month
+                </button>
             </div>
 
             {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                     {error}
+                </div>
+            )}
+            {generatedImage && (
+                <div>
+                    <h2>Generated Image:</h2>
+                    <img src={`data:image/png;base64,${generatedImage}`} alt="Generated Menu Item" />
                 </div>
             )}
 

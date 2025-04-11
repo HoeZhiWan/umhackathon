@@ -442,3 +442,118 @@ export async function suggestItemsToSell(merchantId: string): Promise<{
     return { suggestions: null, error: error as Error };
   }
 }
+
+export async function salesByMonth(merchantId: string): Promise<{ 
+  monthlySales: Array<{ month: string; monthEnd: string; totalSales: number }> | null; 
+  error: Error | null; 
+}> {
+  try {
+    // Fetch all transaction data for the merchant
+    const { data: transactions, error: transactionError } = await supabase
+      .from('transaction_data')
+      .select('order_time, order_value')
+      .eq('merchant_id', merchantId);
+
+    if (transactionError) {
+      console.error('Error fetching transaction data:', transactionError);
+      return { monthlySales: null, error: transactionError };
+    }
+
+    if (!transactions || transactions.length === 0) {
+      console.log('No transactions found for the merchant.');
+      return { monthlySales: [], error: null };
+    }
+
+    // Aggregate data by month
+    const monthlySalesMap: Record<string, { totalSales: number; monthEnd: string }> = {};
+
+    transactions.forEach(transaction => {
+      const orderDate = new Date(transaction.order_time);
+      const year = orderDate.getFullYear();
+      const month = orderDate.getMonth();
+      const monthStart = new Date(year, month, 1);
+      const monthEnd = new Date(year, month + 1, 0);
+
+      const monthKey = monthStart.toISOString().split('T')[0];
+      const monthEndKey = monthEnd.toISOString().split('T')[0];
+
+      if (!monthlySalesMap[monthKey]) {
+        monthlySalesMap[monthKey] = { totalSales: 0, monthEnd: monthEndKey };
+      }
+
+      monthlySalesMap[monthKey].totalSales += transaction.order_value;
+    });
+
+    // Convert the monthly sales map to an array
+    const monthlySales = Object.entries(monthlySalesMap).map(([month, { totalSales, monthEnd }]) => ({
+      month,
+      monthEnd,
+      totalSales,
+    }));
+
+    // Sort by month (ascending)
+    monthlySales.sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
+
+    return { monthlySales, error: null };
+  } catch (error) {
+    console.error('Failed to calculate sales by month:', error);
+    return { monthlySales: null, error: error as Error };
+  }
+}
+
+import { GoogleGenAI } from '@google/genai';
+import { image } from 'motion/react-client';
+
+const client = new GoogleGenAI({
+  apiKey: 'AIzaSyCIUZ9hSO2j4k6TcNJEurJei3u3_NmrDVY',
+});
+
+export async function generateDescriptionAndImage(itemName: string, cuisineTag: string): Promise<{
+  description: string | null;
+  // imageUrl: string | null;
+  imageData: string | null; // Add imageData to the return type
+  error: Error | null;
+}> {
+  try {
+    console.log('Generating description and image for:', { itemName, cuisineTag });
+
+    // Generate AI description
+    const descriptionResponse = await client.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: `Generate a description for a menu item called "${itemName}" in the "${cuisineTag}" category.`,
+    });
+
+    if (!descriptionResponse || !descriptionResponse.text) {
+      throw new Error('Failed to generate description.');
+    }
+    const description = descriptionResponse.text;
+
+    // Generate AI image
+    const imageResponse = await client.models.generateContent({
+      model: 'gemini-2.0-flash-exp-image-generation',
+      contents: `A high-quality image of a "${itemName}" in the "${cuisineTag}" category.`,
+      config: {
+        responseModalities: ["Text", "Image"],
+      },
+    });
+
+    let imageData: string | null = null; // Initialize imageData
+
+    for (const part of imageResponse.candidates?.[0].content?.parts || []) {
+      // Based on the part type, either show the text or save the image
+      if (part.text) {
+        console.log(part.text);
+      } else if (part.inlineData) {
+        imageData = part.inlineData.data ?? null; // Assign the image data or null if undefined
+        console.log("Image saved as gemini-native-image.png");
+      }
+    }
+    return { description: description, imageData: imageData, error: null };
+
+  } catch (error) {
+    console.error('Failed to generate description and image:', error);
+    return { description: null, imageData: null, error: error as Error }; // Return null imageData on error
+  }
+}
+
+

@@ -12,6 +12,7 @@
     "@google/genai": "^0.8.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.4",
+    "axios": "^1.8.4",
     "motion": "^12.6.3",
     "next": "15.2.4",
     "react": "^19.0.0",
