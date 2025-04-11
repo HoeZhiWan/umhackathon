@@ -79,6 +79,85 @@ export function switch_language(language_code: string) {
   }
 }
 
+// New function to set data window content directly from Gemini
+export function set_data_window(
+  visualization_type: 'chart' | 'graph' | 'stats',
+  title: string,
+  data: {
+    chartData?: Array<{ name: string; value: number }>;
+    lineData?: Array<{ name: string; value: number }>;
+    statData?: Array<{ label: string; value: string }>;
+    topItems?: Array<{ name: string; count: number }>;
+    period?: string;
+    merchant?: string;
+  }
+) {
+  try {
+    // Check if the visualization type is valid
+    if (!['chart', 'graph', 'stats'].includes(visualization_type)) {
+      return {
+        success: false,
+        error: `Invalid visualization type: ${visualization_type}. Valid types are: chart, graph, stats`,
+      };
+    }
+
+    // Validate data based on visualization type
+    if (visualization_type === 'chart' && !data.chartData && !data.topItems) {
+      return {
+        success: false,
+        error: 'Chart visualization requires chartData or topItems',
+      };
+    }
+
+    if (visualization_type === 'graph' && !data.lineData) {
+      return {
+        success: false,
+        error: 'Graph visualization requires lineData',
+      };
+    }
+
+    if (visualization_type === 'stats' && !data.statData) {
+      return {
+        success: false,
+        error: 'Stats visualization requires statData',
+      };
+    }
+
+    // Generate a stable ID based on the window type and title
+    const windowTitle = title || (
+      visualization_type === 'chart' ? 'Data Analysis' : 
+      visualization_type === 'graph' ? 'Trend Analysis' : 
+      'Statistics'
+    );
+    
+    // Create a unique ID by combining type and title (and timestamp as fallback)
+    const resultId = `window-${visualization_type}-${windowTitle.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+
+    // Return success with client action to create the window
+    return {
+      success: true,
+      window_type: visualization_type,
+      title: windowTitle,
+      id: resultId,
+      clientAction: {
+        type: "ADD_DATA_WINDOW",
+        params: {
+          visualization_type: visualization_type,
+          title: windowTitle,
+          id: resultId,
+          data
+        }
+      }
+    };
+  } catch (error) {
+    console.error('Error in set_data_window:', error);
+    return {
+      success: false,
+      error: 'Failed to set data window',
+    };
+  }
+}
+
 // Function to get top selling items
 export async function get_top_selling_items(time_period: 'week' | 'month') {
   try {
@@ -115,9 +194,9 @@ export async function get_top_selling_items(time_period: 'week' | 'month') {
       count: item.count
     }));
     
-    // Automatically display the data in a visualization
+    // Use set_data_window instead of display_data_window
     if (formattedItems.length > 0) {
-      display_data_window('chart', `Top Selling Items (${time_period})`, {
+      set_data_window('chart', `Top Selling Items (${time_period})`, {
         topItems: formattedItems,
         period: time_period,
         merchant: merchantName
@@ -140,7 +219,8 @@ export async function get_top_selling_items(time_period: 'week' | 'month') {
   }
 }
 
-// Function to display data visualization windows
+// Commented out display_data_window function to prevent its usage - use set_data_window instead
+/*
 export function display_data_window(
   visualization_type: 'chart' | 'graph' | 'stats', 
   title?: string,
@@ -188,6 +268,7 @@ export function display_data_window(
     }
   };
 }
+*/
 
 // Function to get weekly sales data
 export async function get_weekly_sales() {
@@ -220,9 +301,9 @@ export async function get_weekly_sales() {
       value: parseFloat(item.totalSales.toString())
     }));
 
-    // Display the data in a line graph visualization
+    // Use set_data_window instead of display_data_window
     if (lineData.length > 0) {
-      display_data_window('graph', `Weekly Sales Trends`, {
+      set_data_window('graph', `Weekly Sales Trends`, {
         lineData,
         merchant: merchantName
       });
@@ -297,8 +378,8 @@ export async function get_best_selling_day() {
       }
     ];
 
-    // Display the data in a stats visualization
-    display_data_window('stats', `Best Selling Day Analysis`, {
+    // Use set_data_window instead of display_data_window
+    set_data_window('stats', `Best Selling Day Analysis`, {
       statData,
       merchant: merchantName
     });

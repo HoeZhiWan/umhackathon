@@ -47,8 +47,8 @@ export const getFunctionDeclarations = (): FunctionDeclaration[] => {
       }
     },
     {
-      name: 'display_data_window',
-      description: 'Displays a data visualization window in the interface. Use this when you want to show charts, graphs, or statistics to the user.',
+      name: 'set_data_window',
+      description: 'Sets data for a visualization window. Use this function to display any charts, graphs, or statistics to the user.',
       parameters: {
         type: Type.OBJECT,
         properties: {
@@ -59,7 +59,7 @@ export const getFunctionDeclarations = (): FunctionDeclaration[] => {
           },
           title: {
             type: Type.STRING,
-            description: 'Title for the visualization window (optional)'
+            description: 'Title for the visualization window'
           },
           data: {
             type: Type.OBJECT,
@@ -120,7 +120,7 @@ export const getFunctionDeclarations = (): FunctionDeclaration[] => {
             }
           }
         },
-        required: ['visualization_type']
+        required: ['visualization_type', 'title', 'data']
       }
     },
     {

@@ -18,6 +18,15 @@ export interface DataWindowActionParams {
   visualization_type: 'chart' | 'graph' | 'stats';
   title?: string;
   id?: string;
+  data?: {
+    chartData?: Array<{ name: string; value: number }>;
+    lineData?: Array<{ name: string; value: number }>;
+    statData?: Array<{ label: string; value: string }>;
+    topItems?: Array<{ name: string; count: number }> | string;
+    period?: string;
+    merchant?: string;
+    [key: string]: any; // Allow for additional properties
+  };
 }
 
 export interface LanguageSwitchActionParams {

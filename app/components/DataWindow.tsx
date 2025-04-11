@@ -61,6 +61,15 @@ interface DataWindowProps {
 export default function DataWindow({ type, merchantId, data, title }: DataWindowProps) {
   const [isLoading, setIsLoading] = useState(true);
   
+  // For debugging purposes
+  useEffect(() => {
+    if (data) {
+      console.log(`DataWindow received data for ${type}:`, data);
+    } else {
+      console.log(`DataWindow has no data for ${type}, will generate sample data`);
+    }
+  }, [data, type]);
+  
   // Simulate data loading
   useEffect(() => {
     setIsLoading(true);
@@ -190,11 +199,14 @@ function BarChartDisplay({
 }) {
   // Use state to store data
   const [chartData, setChartData] = useState<Array<ChartData>>([]);
+  const [isUsingProvidedData, setIsUsingProvidedData] = useState(false);
   
   useEffect(() => {
     // If data is provided, use it
     if (data && data.length > 0) {
       setChartData(data);
+      setIsUsingProvidedData(true);
+      console.log("BarChart using provided data:", data);
     } else {
       // Otherwise generate sample data
       const hashCode = (s: string) => {
@@ -219,6 +231,8 @@ function BarChartDisplay({
       }));
       
       setChartData(newData);
+      setIsUsingProvidedData(false);
+      console.log("BarChart using generated sample data");
     }
   }, [merchantId, data]);
   
@@ -232,6 +246,11 @@ function BarChartDisplay({
 
   return (
     <div className="h-full w-full overflow-hidden" style={{ minHeight: '200px' }}>
+      {!isUsingProvidedData && (
+        <div className="text-xs text-muted-foreground mb-2 italic">
+          Using sample data (no data provided by AI)
+        </div>
+      )}
       <ChartContainer config={chartConfig} className="h-full w-full">
         <RechartsBarChart 
           data={chartData} 
@@ -277,11 +296,14 @@ function LineGraphDisplay({
 }) {
   // Use state to store data
   const [lineData, setLineData] = useState<Array<LineData>>([]);
+  const [isUsingProvidedData, setIsUsingProvidedData] = useState(false);
 
   useEffect(() => {
     // If data is provided, use it
     if (data && data.length > 0) {
       setLineData(data);
+      setIsUsingProvidedData(true);
+      console.log("LineGraph using provided data:", data);
     } else {
       // Otherwise generate sample data
       const hashCode = (s: string) => {
@@ -306,6 +328,8 @@ function LineGraphDisplay({
       }));
       
       setLineData(newData);
+      setIsUsingProvidedData(false);
+      console.log("LineGraph using generated sample data");
     }
   }, [merchantId, data]);
 
@@ -319,6 +343,11 @@ function LineGraphDisplay({
   
   return (
     <div className="h-full w-full overflow-hidden" style={{ minHeight: '200px' }}>
+      {!isUsingProvidedData && (
+        <div className="text-xs text-muted-foreground mb-2 italic">
+          Using sample data (no data provided by AI)
+        </div>
+      )}
       <ChartContainer config={chartConfig} className="h-full w-full">
         <RechartsLineChart 
           data={lineData} 
@@ -369,11 +398,14 @@ function StatsDisplay({
 }) {
   // Use state to store consistent data across re-renders
   const [stats, setStats] = useState<Array<StatData>>([]);
+  const [isUsingProvidedData, setIsUsingProvidedData] = useState(false);
   
   useEffect(() => {
     // If data is provided, use it
     if (data && data.length > 0) {
       setStats(data);
+      setIsUsingProvidedData(true);
+      console.log("StatsDisplay using provided data:", data);
     } else {
       // Otherwise generate sample data
       const hashCode = (s: string) => {
@@ -410,11 +442,18 @@ function StatsDisplay({
       ];
       
       setStats(newStats);
+      setIsUsingProvidedData(false);
+      console.log("StatsDisplay using generated sample data");
     }
   }, [merchantId, data]);
 
   return (
     <div className="h-full flex flex-col">
+      {!isUsingProvidedData && (
+        <div className="text-xs text-muted-foreground mb-2 italic">
+          Using sample data (no data provided by AI)
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-4">
         {stats.map((stat, i) => (
           <div 
