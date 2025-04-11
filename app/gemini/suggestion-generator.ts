@@ -1,7 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { ConversationMessage } from "./types";
-import { MODEL_NAME } from "./config";
-import { SUGGESTION_SYSTEM_INSTRUCTION } from "./config";
+import { MODEL_NAME, getSuggestionConfig } from "./config";
 
 // Generate suggested follow-up prompts
 export async function generateSuggestions(
@@ -34,15 +33,13 @@ export async function generateSuggestions(
       parts: [{ text: promptText }]
     };
     
-    // Get suggestions from the model
+    // Get suggestions from the model using our config (with function declarations as context, not tools)
+    const config = getSuggestionConfig();
+    
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: [...recentConversation, suggestionPrompt],
-      config: {
-        temperature: 0.7,
-        maxOutputTokens: 150,
-        systemInstruction: SUGGESTION_SYSTEM_INSTRUCTION
-      },
+      config: config
     });
 
     const suggestionsText = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
@@ -67,28 +64,28 @@ function getDefaultSuggestions(language: string = 'en'): string[] {
   // Default suggestions in different languages
   const suggestions = {
     en: [
-      "Show me this month's sales trends",
-      "What are my best-selling items this month?",
-      "How do I compare to similar merchants?",
-      "Any issues I should address?"
+      "Suggest me a new menu item",
+      "What are my best-selling items?",
+      "Show me my sales data",
+      "What is my best selling day?"
     ],
     ms: [
-      "Tunjukkan trend jualan bulan ini",
-      "Apakah makanan popular saya bulan ini?",
-      "Bagaimanakah prestasi saya berbanding peniaga serupa?",
-      "Adakah isu yang perlu saya tangani?"
+      "Cadangkan saya item menu baru",
+      "Apakah makanan popular saya?",
+      "Tunjukkan data jualan saya",
+      "Apakah hari jualan terbaik saya?"
     ],
     zh: [
-      "显示本月销售趋势",
-      "这个月我最畅销的商品是什么？",
-      "我与类似商家相比如何？",
-      "有什么问题需要解决？"
+      "给我推荐一个新菜单项",
+      "我最畅销的商品是什么？",
+      "显示我的销售数据",
+      "我最畅销的日子是什么？"
     ],
     ta: [
-      "இந்த மாத விற்பனை போக்குகளைக் காட்டு",
+      "எனக்கு புதிய மெனு உருப்படியை பரிந்துரை செய்",
       "இந்த மாதம் எனது அதிகம் விற்பனையாகும் பொருட்கள் என்ன?",
-      "ஒத்த வணிகர்களுடன் நான் எவ்வாறு ஒப்பிடுகிறேன்?",
-      "நான் கவனிக்க வேண்டிய பிரச்சினைகள் உள்ளதா?"
+      "எனது விற்பனை தரவுகளை காட்டுங்கள்",
+      "என்னது எனது அதிக விற்பனை நாளாகும்?"
     ]
   };
   

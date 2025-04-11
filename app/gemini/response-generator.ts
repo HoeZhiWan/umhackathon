@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { ConversationMessage, GeminiResponse } from "./types";
-import { dummy_getCurrentWeather, dummy_getWeatherForecast, display_data_window, get_top_selling_items, switch_language } from "./functions";
+import { dummy_getCurrentWeather, dummy_getWeatherForecast, display_data_window, get_top_selling_items, switch_language, get_weekly_sales, get_best_selling_day, get_item_suggestions } from "./functions";
 import { getGeminiConfig, MODEL_NAME } from "./config";
 import { generateSuggestions } from "./suggestion-generator";
 
@@ -69,6 +69,18 @@ async function handleToolCall(
           `\n\nPlease respond in ${getLanguageName(functionResult.language_code)} language.`;
       }
     }
+  }
+  else if (tool_call.name === "get_weekly_sales") {
+    functionResult = await get_weekly_sales();
+    console.log(`Weekly sales function execution result: ${JSON.stringify(functionResult)}`);
+  }
+  else if (tool_call.name === "get_best_selling_day") {
+    functionResult = await get_best_selling_day();
+    console.log(`Best selling day function execution result: ${JSON.stringify(functionResult)}`);
+  }
+  else if (tool_call.name === "get_item_suggestions") {
+    functionResult = await get_item_suggestions();
+    console.log(`Item suggestions function execution result: ${JSON.stringify(functionResult)}`);
   }
   else {
     // Return null if it's an unrecognized function

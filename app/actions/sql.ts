@@ -316,7 +316,7 @@ export async function bestSellingDay(merchantId: string): Promise<{
 }
 
 export async function salesByWeek(merchantId: string): Promise<{ 
-  weeklySales: Array<{ week: string; totalSales: number }> | null; 
+  weeklySales: Array<{ week: string; weekEnd: string; totalSales: number }> | null; 
   error: Error | null; 
 }> {
   const startDate = '2023-12-01T00:00:00';
@@ -342,7 +342,7 @@ export async function salesByWeek(merchantId: string): Promise<{
     }
 
     // Aggregate data by week
-    const weeklySalesMap: Record<string, number> = {};
+    const weeklySalesMap: Record<string, { totalSales: number; weekEnd: string }> = {};
     const baseDate = new Date('2023-12-05T00:00:00'); // Base date for weekly aggregation
 
     transactions.forEach(transaction => {
@@ -352,14 +352,26 @@ export async function salesByWeek(merchantId: string): Promise<{
       const weekStart = new Date(baseDate);
       weekStart.setDate(baseDate.getDate() + weekNumber * 7); // Calculate the start of the week
       weekStart.setHours(0, 0, 0, 0); // Reset time to midnight
+      
+      // Calculate the end of the week (6 days after start)
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999); // Set to end of day
+      
       const weekKey = weekStart.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      const weekEndKey = weekEnd.toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
-      weeklySalesMap[weekKey] = (weeklySalesMap[weekKey] || 0) + transaction.order_value;
+      if (!weeklySalesMap[weekKey]) {
+        weeklySalesMap[weekKey] = { totalSales: 0, weekEnd: weekEndKey };
+      }
+      
+      weeklySalesMap[weekKey].totalSales += transaction.order_value;
     });
 
     // Convert the weekly sales map to an array
-    const weeklySales = Object.entries(weeklySalesMap).map(([week, totalSales]) => ({
+    const weeklySales = Object.entries(weeklySalesMap).map(([week, { totalSales, weekEnd }]) => ({
       week,
+      weekEnd,
       totalSales,
     }));
 

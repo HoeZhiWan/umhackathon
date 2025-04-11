@@ -81,6 +81,33 @@ export const getFunctionDeclarations = (): FunctionDeclaration[] => {
       }
     },
     {
+      name: 'get_best_selling_day',
+      description: 'Returns the best selling day for a merchant based on total order value',
+      parameters: {
+        type: Type.OBJECT,
+        properties: {},
+        required: []
+      }
+    },
+    {
+      name: 'get_weekly_sales',
+      description: 'Returns sales data aggregated by week for a merchant',
+      parameters: {
+        type: Type.OBJECT,
+        properties: {},
+        required: []
+      }
+    },
+    {
+      name: 'get_item_suggestions',
+      description: 'Suggests potential items to sell based on the merchant\'s cuisine types and trending keywords',
+      parameters: {
+        type: Type.OBJECT,
+        properties: {},
+        required: []
+      }
+    },
+    {
       name: 'switch_language',
       description: 'Automatically switches the user interface language when detecting the user is speaking a different language. Call this function directly without asking for user confirmation when you detect the user is using a language different from the current one.',
       parameters: {

@@ -1,4 +1,4 @@
-import { topSellingItemsWeek, topSellingItemsMonth, salesByWeek } from '../actions/sql';
+import { topSellingItemsWeek, topSellingItemsMonth, salesByWeek, bestSellingDay, suggestItemsToSell } from '../actions/sql';
 import { getCurrentMerchant } from '../lib/merchant-store';
 
 // Dummy weather function implementation
@@ -113,20 +113,7 @@ export async function get_top_selling_items(time_period: 'week' | 'month') {
       success: true,
       time_period,
       merchant_name: merchantName,
-      items: topItems.length > 0 ? topItems : 'No data available',
-      clientAction: {
-        type: "ADD_DATA_WINDOW",
-        params: {
-          visualization_type: 'stats',
-          title: `${merchantName}'s Top 5 Selling Items (${time_period})`,
-          id: `top-selling-${time_period}-${Date.now()}`,
-          data: {
-            topItems: topItems.length > 0 ? topItems : 'No data available',
-            period: time_period,
-            merchant: merchantName
-          }
-        }
-      }
+      items: topItems.length > 0 ? topItems : []
     };
   } catch (error) {
     console.error('Error in get_top_selling_items:', error);
@@ -195,33 +182,15 @@ export async function get_weekly_sales() {
     if (!weeklySales || weeklySales.length === 0) {
       return {
         success: true,
-        message: `No sales data was found for ${merchantName} during the specified period.`,
+        merchant_name: merchantName,
         weeklySales: [],
       };
     }
 
-    // Format the weekly sales data into a chatbot-friendly response
-    const formattedSales = weeklySales.map(
-      (week) => `Week starting on ${week.week}: Total Sales = $${week.totalSales.toFixed(2)}`
-    ).join('\n');
-
     return {
       success: true,
       merchant_name: merchantName,
-      message: `Here is the weekly sales data for ${merchantName}:\n${formattedSales}`,
       weeklySales,
-      clientAction: {
-        type: "ADD_DATA_WINDOW",
-        params: {
-          visualization_type: 'stats',
-          title: `${merchantName}'s Weekly Sales`,
-          id: `weekly-sales-${Date.now()}`,
-          data: {
-            weeklySales,
-            merchant: merchantName,
-          },
-        },
-      },
     };
   } catch (error) {
     console.error('Error in get_weekly_sales:', error);
@@ -229,6 +198,96 @@ export async function get_weekly_sales() {
       success: false,
       error: 'Failed to retrieve weekly sales data',
       weeklySales: null,
+    };
+  }
+}
+
+// Function to get merchant's best selling day
+export async function get_best_selling_day() {
+  try {
+    // Get the merchant ID automatically from the store
+    const { merchantId, merchantName } = await getCurrentMerchant();
+
+    // Fetch best selling day data
+    const { bestSellingDay: bestDay, error } = await bestSellingDay(merchantId);
+
+    if (error) {
+      return {
+        success: false,
+        error: `Error retrieving best selling day: ${error.message}`,
+        bestSellingDay: null,
+      };
+    }
+
+    if (!bestDay) {
+      return {
+        success: true,
+        merchant_name: merchantName,
+        bestSellingDay: null,
+      };
+    }
+
+    // Format the date to display in a more readable format
+    const date = new Date(bestDay);
+    const formattedDate = date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    return {
+      success: true,
+      merchant_name: merchantName,
+      bestSellingDay: bestDay,
+      formattedDate,
+    };
+  } catch (error) {
+    console.error('Error in get_best_selling_day:', error);
+    return {
+      success: false,
+      error: 'Failed to retrieve best selling day data',
+      bestSellingDay: null,
+    };
+  }
+}
+
+// Function to get item suggestions for the merchant based on their cuisine tags
+export async function get_item_suggestions() {
+  try {
+    // Get the merchant ID automatically from the store
+    const { merchantId, merchantName } = await getCurrentMerchant();
+
+    // Fetch item suggestions data
+    const { suggestions, error } = await suggestItemsToSell(merchantId);
+
+    if (error) {
+      return {
+        success: false,
+        error: `Error retrieving item suggestions: ${error.message}`,
+        suggestions: null,
+      };
+    }
+
+    if (!suggestions || suggestions.length === 0) {
+      return {
+        success: true,
+        merchant_name: merchantName,
+        suggestions: [],
+      };
+    }
+
+    return {
+      success: true,
+      merchant_name: merchantName,
+      suggestions,
+    };
+  } catch (error) {
+    console.error('Error in get_item_suggestions:', error);
+    return {
+      success: false,
+      error: 'Failed to retrieve item suggestions',
+      suggestions: null,
     };
   }
 }

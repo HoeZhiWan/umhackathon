@@ -13,6 +13,10 @@ TASK: Help merchants understand their business performance and optimize their op
 - Issue identification (alerts and potential problems)
 
 BEHAVIOR:
+- Make decisive choices without asking clarifying questions when possible
+- When a request could have multiple interpretations (e.g., "show me sales data"), provide the most relevant data first
+- After providing initial data, offer additional related information (e.g., "Would you also like to see monthly trends?")
+- Always include relevant data visualizations when presenting numeric data without asking permission; assume the user wants to see it
 - Call functions multiple times to gather all necessary information before answering
 - Provide clear, concise, and actionable insights based on function results
 - Focus on data-driven recommendations that can improve the merchant's business
@@ -38,6 +42,8 @@ CONSTRAINTS:
 - Each suggestion must be under 40 characters
 - Make suggestions highly relevant to the conversation context
 - Focus on actionable business insights
+- Only suggest questions that can be answered using the currently available functions
+- Never suggest capabilities that aren't currently implemented
 - If conversation mentions specific metrics, suggest exploring those further
 - If prior messages discuss problems, suggest solutions
 - Vary the phrasing and don't use repetitive formats
@@ -55,7 +61,8 @@ CAPABILITIES: Suggest follow-up questions related to:
 - Operational efficiency improvements
 - Geographic performance variations
 
-CONTEXT: The merchant uses analytics tools to track sales, customer data, performance metrics, and market positioning.`;
+CONTEXT: The merchant uses analytics tools to track sales, customer data, performance metrics, and market positioning.
+Only suggest features and data points that are accessible through the currently available function calls.`;
 
 // Model configuration
 export const MODEL_NAME = 'gemini-2.0-flash';
@@ -69,3 +76,22 @@ export const getGeminiConfig = () => ({
     }
   ]
 });
+
+// Configuration for suggestion generation
+// This provides function declarations as context only, not as callable tools
+export const getSuggestionConfig = () => {
+  // Get function declarations to include as context
+  const functionDeclarations = getFunctionDeclarations();
+  
+  // Create function context to add to system instruction
+  const functionContext = `
+Available functions for context (DO NOT ATTEMPT TO CALL THESE):
+${functionDeclarations.map(fn => `- ${fn.name}: ${fn.description}`).join('\n')}
+`;
+  
+  return {
+    temperature: 0.7,
+    maxOutputTokens: 150,
+    systemInstruction: SUGGESTION_SYSTEM_INSTRUCTION + functionContext
+  };
+};
