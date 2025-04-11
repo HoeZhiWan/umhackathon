@@ -314,3 +314,119 @@ export async function bestSellingDay(merchantId: string): Promise<{
   }
   //hheheh
 }
+
+export async function salesByWeek(merchantId: string): Promise<{ 
+  weeklySales: Array<{ week: string; totalSales: number }> | null; 
+  error: Error | null; 
+}> {
+  const startDate = '2023-12-01T00:00:00';
+  const endDate = '2023-12-31T23:59:59';
+
+  try {
+    // Fetch transaction data for the merchant within December
+    const { data: transactions, error: transactionError } = await supabase
+      .from('transaction_data')
+      .select('order_time, order_value')
+      .eq('merchant_id', merchantId)
+      .gte('order_time', startDate)
+      .lte('order_time', endDate);
+
+    if (transactionError) {
+      console.error('Error fetching transaction data:', transactionError);
+      return { weeklySales: null, error: transactionError };
+    }
+
+    if (!transactions || transactions.length === 0) {
+      console.log('No transactions found for the specified period.');
+      return { weeklySales: [], error: null };
+    }
+
+    // Aggregate data by week
+    const weeklySalesMap: Record<string, number> = {};
+    const baseDate = new Date('2023-12-05T00:00:00'); // Base date for weekly aggregation
+
+    transactions.forEach(transaction => {
+      const orderDate = new Date(transaction.order_time);
+      const diffInDays = Math.floor((orderDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
+      const weekNumber = Math.floor(diffInDays / 7); // Calculate the week number relative to the base date
+      const weekStart = new Date(baseDate);
+      weekStart.setDate(baseDate.getDate() + weekNumber * 7); // Calculate the start of the week
+      weekStart.setHours(0, 0, 0, 0); // Reset time to midnight
+      const weekKey = weekStart.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
+      weeklySalesMap[weekKey] = (weeklySalesMap[weekKey] || 0) + transaction.order_value;
+    });
+
+    // Convert the weekly sales map to an array
+    const weeklySales = Object.entries(weeklySalesMap).map(([week, totalSales]) => ({
+      week,
+      totalSales,
+    }));
+
+    // Sort by week (ascending)
+    weeklySales.sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
+
+    return { weeklySales, error: null };
+  } catch (error) {
+    console.error('Failed to calculate sales by week:', error);
+    return { weeklySales: null, error: error as Error };
+  }
+}
+
+export async function suggestItemsToSell(merchantId: string): Promise<{ 
+  suggestions: Array<{ cuisineTag: string; keyword: string }> | null; 
+  error: Error | null; 
+}> {
+  try {
+    // Fetch items for the merchant
+    const { data: items, error: itemsError } = await supabase
+      .from('items')
+      .select('item_id, cuisine_tag')
+      .eq('merchant_id', merchantId);
+
+    if (itemsError) {
+      console.error('Error fetching items:', itemsError);
+      return { suggestions: null, error: itemsError };
+    }
+
+    if (!items || items.length === 0) {
+      console.log('No items found for the merchant.');
+      return { suggestions: [], error: null };
+    }
+
+    // Extract unique cuisine tags from the items
+    const merchantCuisineTags = Array.from(new Set(items.map(item => item.cuisine_tag).filter(tag => tag)));
+
+    if (merchantCuisineTags.length === 0) {
+      console.log('No cuisine tags found for the merchant.');
+      return { suggestions: [], error: null };
+    }
+
+    // Fetch keywords for the cuisine tags from max_viewed_keyword_by_tag
+    const { data: keywords, error: keywordsError } = await supabase
+      .from('max_viewed_keyword_by_tag')
+      .select('cuisine_tag, keyword')
+      .in('cuisine_tag', merchantCuisineTags);
+
+    if (keywordsError) {
+      console.error('Error fetching keywords:', keywordsError);
+      return { suggestions: null, error: keywordsError };
+    }
+
+    if (!keywords || keywords.length === 0) {
+      console.log('No matching keywords found for the cuisine tags.');
+      return { suggestions: [], error: null };
+    }
+
+    // Map cuisine tags to their corresponding keywords
+    const suggestions = merchantCuisineTags.map(tag => {
+      const matchedKeyword = keywords.find(keyword => keyword.cuisine_tag === tag);
+      return matchedKeyword ? { cuisineTag: tag, keyword: matchedKeyword.keyword } : null;
+    }).filter(suggestion => suggestion !== null) as Array<{ cuisineTag: string; keyword: string }>;
+
+    return { suggestions, error: null };
+  } catch (error) {
+    console.error('Failed to suggest items to sell:', error);
+    return { suggestions: null, error: error as Error };
+  }
+}
