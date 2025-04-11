@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import ChatInterface from "../components/ChatInterface";
 import MerchantSelector from "../components/MerchantSelector";
 import LanguageSelector from "../components/LanguageSelector";
 import DataWindow from "../components/DataWindow";
+import MenuItemWindow from "../components/MenuItemWindow";
 
 // Define the window type for type safety
 interface Window {
   id: string;
-  type: 'chart' | 'graph' | 'stats';
+  type: 'chart' | 'graph' | 'stats' | 'menu-item';
   title: string;
   data?: any; // Add data property to store visualization data
 }
@@ -18,6 +19,7 @@ interface Window {
 declare global {
   interface Window {
     addDataWindowFromGemini?: (type: 'chart' | 'graph' | 'stats', title?: string, id?: string) => void;
+    addMenuItemWindowFromGemini?: (itemName: string, cuisineTag: string, description?: string, imageData?: string, id?: string) => void;
   }
 }
 
@@ -42,23 +44,53 @@ export default function ChatPage() {
     return newId;
   }, [dataWindows]);
 
+  // Function to add a new menu item window
+  const addMenuItemWindow = useCallback((itemName: string, cuisineTag: string, description?: string, imageData?: string, providedId?: string) => {
+    if (dataWindows.length >= 5) return; // Maximum 5 data windows
+    
+    // Generate ID if not provided
+    const newId = providedId || `menu-item-${Date.now()}`;
+    const title = "Add New Menu Item";
+    
+    // Create the window with menu item data
+    setDataWindows(prevWindows => [
+      ...prevWindows,
+      { 
+        id: newId, 
+        type: 'menu-item', 
+        title, 
+        data: {
+          itemName,
+          cuisineTag,
+          description,
+          imageData
+        }
+      }
+    ]);
+    
+    return newId;
+  }, [dataWindows]);
+
   // Function to remove a data window
   const removeDataWindow = (windowId: string) => {
     setDataWindows(dataWindows.filter(window => window.id !== windowId));
   };
 
-  // Expose the function globally for Gemini to call
-  useState(() => {
+  // Expose the functions globally for Gemini to call
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       window.addDataWindowFromGemini = (type, title, id) => addDataWindow(type, title, id);
+      window.addMenuItemWindowFromGemini = (itemName, cuisineTag, description, imageData, id) => 
+        addMenuItemWindow(itemName, cuisineTag, description, imageData, id);
     }
     
     return () => {
       if (typeof window !== 'undefined') {
         delete window.addDataWindowFromGemini;
+        delete window.addMenuItemWindowFromGemini;
       }
     };
-  });
+  }, [addDataWindow, addMenuItemWindow]);
 
   // Calculate the grid layout to keep chat in center with full height
   const getGridLayout = () => {
@@ -155,6 +187,7 @@ export default function ChatPage() {
             <ChatInterface 
               merchantId={merchantId}
               onAddDataWindow={addDataWindow}
+              onAddMenuItemWindow={addMenuItemWindow}
             />
           </div>
         </div>
@@ -182,12 +215,21 @@ export default function ChatPage() {
               className="h-[calc(100%-2.5rem)]"
               style={{ backgroundColor: "var(--light)", color: "var(--foreground)" }}
             >
-              <DataWindow 
-                type={window.type} 
-                merchantId={merchantId} 
-                data={window.data}
-                title={window.title}
-              />
+              {window.type === 'menu-item' ? (
+                <MenuItemWindow 
+                  itemName={window.data?.itemName || ""}
+                  cuisineTag={window.data?.cuisineTag || ""}
+                  description={window.data?.description}
+                  imageData={window.data?.imageData}
+                />
+              ) : (
+                <DataWindow 
+                  type={window.type} 
+                  merchantId={merchantId} 
+                  data={window.data}
+                  title={window.title}
+                />
+              )}
             </div> 
           </div>
         ))}

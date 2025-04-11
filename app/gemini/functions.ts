@@ -1,5 +1,6 @@
 import { topSellingItemsWeek, topSellingItemsMonth, salesByWeek, bestSellingDay, suggestItemsToSell } from '../actions/sql';
 import { getCurrentMerchant } from '../lib/merchant-store';
+import { genAIClient, MODEL_NAME, MODEL_NAME_IMAGE_GENERATION, getDescriptionAndImagePrompt } from './config';
 
 // Dummy weather function implementation
 export function dummy_getCurrentWeather(location: string, unit: string = 'Celsius') {
@@ -436,6 +437,157 @@ export async function get_item_suggestions() {
       success: false,
       error: 'Failed to retrieve item suggestions',
       suggestions: null,
+    };
+  }
+}
+
+// Function to generate item description and AI image
+export async function generate_description_and_image(item_name: string, cuisine_tag: string) {
+  try {
+    console.log('Generating description and image for:', { item_name, cuisine_tag });
+
+    // Get the customized prompt from config
+    const prompt = getDescriptionAndImagePrompt(item_name, cuisine_tag);
+
+    // Generate both description and image in a single call
+    const response = await genAIClient.models.generateContent({
+      model: MODEL_NAME_IMAGE_GENERATION,
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: prompt }]
+        }
+      ],
+      config: {
+        responseModalities: ["Text", "Image"],
+      },
+    });
+
+    if (!response.candidates || response.candidates.length === 0) {
+      throw new Error('No response received from Gemini API.');
+    }
+
+    // Extract description and image from response
+    let description = '';
+    let imageData: string | null = null;
+
+    for (const part of response.candidates[0].content?.parts || []) {
+      if (part.text) {
+        // The first text part will typically be the description
+        if (!description) {
+          description = part.text;
+        }
+        console.log("Text content:", part.text);
+      } else if (part.inlineData) {
+        imageData = part.inlineData.data ?? null;
+        console.log("Image data generated successfully");
+      }
+    }
+
+    if (!description) {
+      throw new Error('Failed to generate description.');
+    }
+
+    return {
+      success: true,
+      item_name,
+      cuisine_tag,
+      description,
+      imageData,
+    };
+  } catch (error) {
+    console.error('Failed to generate description and image:', error);
+    return {
+      success: false,
+      error: (error as Error).message || 'Unknown error occurred',
+      description: null,
+      imageData: null,
+    };
+  }
+}
+
+// Function to add menu item window with description and image
+export function add_menu_item_window(
+  item_name: string,
+  cuisine_tag: string,
+  description?: string,
+  imageData?: string
+) {
+  try {
+    if (!item_name || !cuisine_tag) {
+      return {
+        success: false,
+        error: 'Item name and cuisine tag are required',
+      };
+    }
+
+    // Generate a stable ID for the window
+    const resultId = `menu-item-${item_name.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+    
+    // Return success with client action to create the menu item window
+    return {
+      success: true,
+      item_name,
+      cuisine_tag,
+      description,
+      imageData,
+      id: resultId,
+      clientAction: {
+        type: "ADD_MENU_ITEM_WINDOW",
+        params: {
+          itemName: item_name, // Ensuring property names match what the client expects
+          cuisineTag: cuisine_tag,
+          description,
+          imageData,
+          id: resultId
+        }
+      }
+    };
+  } catch (error) {
+    console.error('Error in add_menu_item_window:', error);
+    return {
+      success: false,
+      error: 'Failed to create menu item window',
+    };
+  }
+}
+
+// Function to create a complete workflow for menu item creation
+export async function create_menu_item(item_name: string, cuisine_tag: string) {
+  try {
+    console.log('Starting create_menu_item workflow for:', { item_name, cuisine_tag });
+
+    // Step 1: Generate description and image
+    const generationResult = await generate_description_and_image(item_name, cuisine_tag);
+    if (!generationResult.success) {
+      return {
+        success: false,
+        error: `Failed to generate description and image: ${generationResult.error}`,
+      };
+    }
+
+    // Step 2: Create the menu item window with the generated content
+    const windowResult = add_menu_item_window(
+      item_name,
+      cuisine_tag,
+      generationResult.description || undefined,
+      generationResult.imageData || undefined
+    );
+
+    return {
+      success: true,
+      item_name,
+      cuisine_tag,
+      description: generationResult.description,
+      has_image: !!generationResult.imageData,
+      window_id: windowResult.id,
+      clientAction: windowResult.clientAction
+    };
+  } catch (error) {
+    console.error('Error in create_menu_item workflow:', error);
+    return {
+      success: false,
+      error: (error as Error).message || 'Unknown error occurred',
     };
   }
 }

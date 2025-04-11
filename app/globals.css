@@ -140,3 +140,19 @@ button:not([disabled]) {
     font-family: var(--font-sans); /* Use Poppins globally */
  }
 }
+
+/* Animation for the checkmark in the success state */
+@keyframes drawCheck {
+  0% {
+    stroke-dashoffset: 65;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-draw-check {
+  stroke-dasharray: 65;
+  stroke-dashoffset: 65;
+  animation: drawCheck 0.8s ease-in-out forwards;
+}

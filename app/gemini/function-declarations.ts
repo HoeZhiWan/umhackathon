@@ -180,5 +180,67 @@ export const getFunctionDeclarations = (): FunctionDeclaration[] => {
         required: ['language_code']
       }
     },
+    {
+      name: 'generate_description_and_image',
+      description: 'Generates a description and AI image for a menu item based on its name and cuisine category',
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          item_name: {
+            type: Type.STRING,
+            description: 'The name of the menu item'
+          },
+          cuisine_tag: {
+            type: Type.STRING,
+            description: 'The cuisine category of the item'
+          }
+        },
+        required: ['item_name', 'cuisine_tag']
+      }
+    },
+    {
+      name: 'add_menu_item_window',
+      description: 'Creates a window for adding a new menu item with the provided details. Use this when user wants to create a new menu item.',
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          item_name: {
+            type: Type.STRING,
+            description: 'Name of the menu item to add'
+          },
+          cuisine_tag: {
+            type: Type.STRING,
+            description: 'Cuisine category of the item (e.g., Thai, Italian, etc.)'
+          },
+          description: {
+            type: Type.STRING,
+            description: 'Description of the menu item'
+          },
+          imageData: {
+            type: Type.STRING,
+            description: 'Base64 encoded image data for the menu item'
+          }
+        },
+        required: ['item_name', 'cuisine_tag']
+      }
+    },
+    {
+      name: 'create_menu_item',
+      description: 'Creates a new menu item by generating a description and image, then opening a form window to add it to the menu.',
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          item_name: {
+            type: Type.STRING,
+            description: 'Name of the menu item to create'
+          },
+          cuisine_tag: {
+            type: Type.STRING,
+            description: 'Cuisine category of the item (e.g., Thai, Italian, etc.)'
+          }
+        },
+        required: ['item_name', 'cuisine_tag']
+      }
+    },
   ];
 }

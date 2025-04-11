@@ -1,4 +1,17 @@
 import { getFunctionDeclarations } from "./function-declarations";
+import { GoogleGenAI } from '@google/genai';
+
+// API key for Gemini (reads from environment variables)
+export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+
+// Initialize the Google GenAI client (singleton)
+export const genAIClient = new GoogleGenAI({
+  apiKey: GEMINI_API_KEY,
+});
+
+// Model names
+export const MODEL_NAME = 'gemini-2.0-flash';
+export const MODEL_NAME_IMAGE_GENERATION = 'gemini-2.0-flash-exp-image-generation';
 
 // System instructions for Gemini
 export const SYSTEM_INSTRUCTION = `ROLE: You are MEX assistant, a merchant support assistant for Grab Food, a delivery platform with access to analytics and operational tools.
@@ -11,6 +24,7 @@ TASK: Help merchants understand their business performance and optimize their op
 - Operational reports (weekly/monthly sales reports, slow-moving items)
 - Order logistics (driver arrival times)
 - Issue identification (alerts and potential problems)
+- Menu item generation and management (help create new menu items with descriptions and images)
 
 BEHAVIOR:
 - Make decisive choices without asking clarifying questions when possible
@@ -34,38 +48,47 @@ FORMATTING:
 - Format numeric data consistently (e.g., percentages, currency values)`;
 
 // Specialized system instruction for generating chat suggestions
-export const SUGGESTION_SYSTEM_INSTRUCTION = `You are generating follow-up questions for a merchant using Grab Food's analytics dashboard.
+export const SUGGESTION_SYSTEM_INSTRUCTION = `Generate 3-4 merchant follow-up questions OR simple answer options under 40 characters each.
 
-TASK: Create 3-4 short, specific follow-up questions based on the conversation history.
-
-CONSTRAINTS:
-- Each suggestion must be under 40 characters
-- Make suggestions highly relevant to the conversation context
+FOR FOLLOW-UP QUESTIONS:
+- Create questions from the merchant's perspective
 - Focus on actionable business insights
-- Only suggest questions that can be answered using the currently available functions
-- Never suggest capabilities that aren't currently implemented
-- If conversation mentions specific metrics, suggest exploring those further
-- If prior messages discuss problems, suggest solutions
-- Vary the phrasing and don't use repetitive formats
-- Each suggestion should be a distinct question, not a variation of the same question
-- Don't number or prefix suggestions
-- No quotation marks or bullet points
+- Examples: "How are my top dishes performing?", "What are my peak order times?"
 
-CAPABILITIES: Suggest follow-up questions related to:
-- Sales analytics (e.g., top items, peak hours)
-- Performance metrics (e.g., order volume trends)
-- Competitive positioning in the marketplace
-- Customer behavior patterns and preferences
-- Optimization opportunities for menu or pricing
-- Seasonal trends and promotional planning
+FOR SIMPLE ANSWER OPTIONS:
+- Provide brief responses to clarifying questions
+- Examples: "Yes", "No", "Monthly", "Weekly", "Last 7 days"
+
+GUIDELINES:
+- Make suggestions relevant to the conversation
+- Only suggest questions answerable with available functions
+- No numbering, quotation marks, or bullet points
+- Vary phrasing and avoid repetitive formats
+- When analytics are mentioned, suggest exploring those further
+- When problems are discussed, suggest solutions
+- When the AI asks clarifying questions, provide possible brief responses
+
+CAPABILITIES:
+- Sales analytics and performance metrics
+- Menu item creation and optimization
+- Marketing and promotional strategies
+- Customer behavior analysis
+- Competitive positioning insights
 - Operational efficiency improvements
-- Geographic performance variations
+- Seasonal trend identification
+- Geographic performance analysis
 
-CONTEXT: The merchant uses analytics tools to track sales, customer data, performance metrics, and market positioning.
-Only suggest features and data points that are accessible through the currently available function calls.`;
+DOMAIN: Sales analytics, performance metrics, competitive positioning, customer behavior, menu optimization, seasonal trends, operational efficiency, geographic performance.`;
 
-// Model configuration
-export const MODEL_NAME = 'gemini-2.0-flash';
+
+// System instruction for generating food descriptions and images
+export const getDescriptionAndImagePrompt = (item_name: string, cuisine_tag: string) => {
+  return `Create both a brief description and an image for a menu item called "${item_name}" in the "${cuisine_tag}" cuisine category.
+                     
+Provide a concise, appetizing description of the dish in just 1-2 short sentences. Focus only on the most important flavors, ingredients, or preparation methods.
+                     
+Then generate a high-quality, appetizing image of the dish that looks professional enough to be used in a restaurant menu or food delivery app.`;
+};
 
 // Configuration for the Gemini model
 export const getGeminiConfig = () => ({

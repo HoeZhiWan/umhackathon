@@ -11,9 +11,10 @@ import { Message } from '../types/chat';
 interface ChatInterfaceProps {
   merchantId: string;
   onAddDataWindow?: (type: 'chart' | 'graph' | 'stats', title?: string, providedId?: string) => string | undefined;
+  onAddMenuItemWindow?: (itemName: string, cuisineTag: string, description?: string, imageData?: string, providedId?: string) => string | undefined;
 }
 
-export default function ChatInterface({ merchantId, onAddDataWindow }: ChatInterfaceProps) {
+export default function ChatInterface({ merchantId, onAddDataWindow, onAddMenuItemWindow }: ChatInterfaceProps) {
   const {
     messages,
     inputValue,
@@ -24,7 +25,7 @@ export default function ChatInterface({ merchantId, onAddDataWindow }: ChatInter
     suggestedPrompts,
     handleSuggestionClick,
     language
-  } = useChat({ initialMerchantId: merchantId, onAddDataWindow });
+  } = useChat({ initialMerchantId: merchantId, onAddDataWindow, onAddMenuItemWindow });
 
   const isNewConversation = messages.length === 0;
 

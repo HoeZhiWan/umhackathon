@@ -29,16 +29,24 @@ export interface DataWindowActionParams {
   };
 }
 
+export interface MenuItemWindowActionParams {
+  itemName: string;
+  cuisineTag: string;
+  description?: string;
+  imageData?: string;
+  id?: string;
+}
+
 export interface LanguageSwitchActionParams {
   language_code: string;
 }
 
 // Union type for all possible parameter types
-export type ClientActionParams = DataWindowActionParams | LanguageSwitchActionParams;
+export type ClientActionParams = DataWindowActionParams | LanguageSwitchActionParams | MenuItemWindowActionParams;
 
 // Interface for client actions in function results
 export interface ClientAction {
-  type: "ADD_DATA_WINDOW" | "SWITCH_LANGUAGE" | string;
+  type: "ADD_DATA_WINDOW" | "SWITCH_LANGUAGE" | "ADD_MENU_ITEM_WINDOW" | string;
   params: ClientActionParams;
 }
 

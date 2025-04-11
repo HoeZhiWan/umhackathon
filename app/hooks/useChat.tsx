@@ -9,9 +9,10 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface UseChatProps {
   initialMerchantId: string;
   onAddDataWindow?: (type: 'chart' | 'graph' | 'stats', title?: string, providedId?: string, data?: any) => string | undefined;
+  onAddMenuItemWindow?: (itemName: string, cuisineTag: string, description?: string, imageData?: string, providedId?: string) => string | undefined;
 }
 
-export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
+export function useChat({ initialMerchantId, onAddDataWindow, onAddMenuItemWindow }: UseChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -239,6 +240,34 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
               }
             }
             break;
+          case "ADD_MENU_ITEM_WINDOW":
+            if (onAddMenuItemWindow && result.clientAction.params) {
+              const params = result.clientAction.params as {
+                itemName: string;
+                cuisineTag: string;
+                description?: string;
+                imageData?: string;
+                id?: string;
+              };
+              const { itemName, cuisineTag, description, imageData, id } = params;
+              
+              if (itemName && cuisineTag) {
+                console.log('Adding menu item window with data:', { itemName, cuisineTag, description });
+                onAddMenuItemWindow(
+                  itemName,
+                  cuisineTag,
+                  description,
+                  imageData,
+                  id || stableId
+                );
+                
+                // Mark this result as processed
+                if (stableId) {
+                  processedResultsRef.current.add(stableId);
+                }
+              }
+            }
+            break;
           case "SWITCH_LANGUAGE":
             if (result.clientAction.params) {
               // Use type assertion to tell TypeScript this is a LanguageSwitchActionParams
@@ -264,7 +293,7 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
         handleClientActions(latestMessage._rawData);
       }
     }
-  }, [messages, onAddDataWindow, setLanguage]);
+  }, [messages, onAddDataWindow, onAddMenuItemWindow, setLanguage]);
 
   return {
     messages,

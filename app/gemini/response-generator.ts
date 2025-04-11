@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { ConversationMessage, GeminiResponse } from "./types";
-import { dummy_getCurrentWeather, dummy_getWeatherForecast, get_top_selling_items, switch_language, get_weekly_sales, get_best_selling_day, get_item_suggestions, set_data_window } from "./functions";
+import { dummy_getCurrentWeather, dummy_getWeatherForecast, get_top_selling_items, switch_language, get_weekly_sales, get_best_selling_day, get_item_suggestions, set_data_window, generate_description_and_image, add_menu_item_window, create_menu_item } from "./functions";
 import { getGeminiConfig, MODEL_NAME } from "./config";
 import { generateSuggestions } from "./suggestion-generator";
 
@@ -83,6 +83,46 @@ async function handleToolCall(
   else if (tool_call.name === "get_item_suggestions") {
     functionResult = await get_item_suggestions();
     console.log(`Item suggestions function execution result: ${JSON.stringify(functionResult)}`);
+  }
+  else if (tool_call.name === "generate_description_and_image" && tool_call.args) {
+    functionResult = await generate_description_and_image(
+      tool_call.args.item_name as string,
+      tool_call.args.cuisine_tag as string
+    );
+    console.log(`Description and image generation result: ${JSON.stringify({
+      success: functionResult.success,
+      item_name: functionResult.item_name,
+      cuisine_tag: functionResult.cuisine_tag,
+      description: functionResult.description?.substring(0, 50) + '...',
+      imageData: functionResult.imageData ? 'Generated successfully' : 'Not generated'
+    })}`);
+  }
+  else if (tool_call.name === "add_menu_item_window" && tool_call.args) {
+    functionResult = add_menu_item_window(
+      tool_call.args.item_name as string,
+      tool_call.args.cuisine_tag as string,
+      tool_call.args.description as string,
+      tool_call.args.imageData as string
+    );
+    console.log(`Add menu item window result: ${JSON.stringify({
+      success: functionResult.success,
+      item_name: functionResult.item_name,
+      cuisine_tag: functionResult.cuisine_tag,
+      id: functionResult.id
+    })}`);
+  }
+  else if (tool_call.name === "create_menu_item" && tool_call.args) {
+    functionResult = await create_menu_item(
+      tool_call.args.item_name as string,
+      tool_call.args.cuisine_tag as string
+    );
+    console.log(`Create menu item workflow result: ${JSON.stringify({
+      success: functionResult.success,
+      item_name: functionResult.item_name,
+      cuisine_tag: functionResult.cuisine_tag,
+      has_image: functionResult.has_image,
+      window_id: functionResult.window_id
+    })}`);
   }
   else {
     // Return null if it's an unrecognized function

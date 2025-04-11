@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { supabase } from "../actions/sql";
 import { topSellingItemsWeek, topSellingItemsMonth, bestSellingTime,salesByWeek, salesByMonth } from "../actions/sql"
-import { generateDescriptionAndImage } from "../actions/sql";
+// import { generateDescriptionAndImage } from "../actions/sql";
 
 export default function SqlPage() {
     const [weeklyItems, setWeeklyItems] = useState<Array<{ name: string; count: number }> | null>(null);
@@ -116,24 +116,24 @@ export default function SqlPage() {
     };
 
     //testing
-    const testCreateMenuItem = async () => {
-        setError(null);
-        try {
-            const itemName = "Test Item";
-            const cuisineTag = "Test Cuisine";
-            console.log("Testing createMenuItem with:", itemName, cuisineTag);
+    // const testCreateMenuItem = async () => {
+    //     setError(null);
+    //     try {
+    //         const itemName = "Test Item";
+    //         const cuisineTag = "Test Cuisine";
+    //         console.log("Testing createMenuItem with:", itemName, cuisineTag);
     
-            const result = await generateDescriptionAndImage('ice cream', 'dessert');
-            if (result.imageData) {
-                setGeneratedImage(result.imageData);
-            }
+    //         const result = await generateDescriptionAndImage('ice cream', 'dessert');
+    //         if (result.imageData) {
+    //             setGeneratedImage(result.imageData);
+    //         }
     
-            console.log('Create Menu Item result:', result);
-        } catch (err) {
-            console.error("Unexpected error in createMenuItem test:", err);
-            setError(`Unexpected error: ${(err as Error).message}`);
-        }
-    };
+    //         console.log('Create Menu Item result:', result);
+    //     } catch (err) {
+    //         console.error("Unexpected error in createMenuItem test:", err);
+    //         setError(`Unexpected error: ${(err as Error).message}`);
+    //     }
+    // };
 
     return (
         <div className="p-6 max-w-4xl mx-auto">
@@ -175,11 +175,11 @@ export default function SqlPage() {
 
 
                 {/* testing button */ }
-                <button 
+                {/* <button 
                     onClick={testCreateMenuItem}
                     className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 disabled:opacity-50"
                 >AI Create Menu Item
-                </button>
+                </button> */}
                 <button 
                     onClick={fetchMonthlySales}
                     className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 disabled:opacity-50"
