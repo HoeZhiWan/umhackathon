@@ -21,7 +21,7 @@ export default function LanguageSelector() {
         id="language-selector"
         value={language}
         onChange={handleLanguageChange}
-        className="rounded-md p-1.5 text-sm border"
+        className="rounded-2xl p-1.5 text-sm border font-medium"
         style={{ 
           backgroundColor: "var(--light)",
           color: "var(--dark)",

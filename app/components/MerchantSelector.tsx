@@ -62,7 +62,7 @@ export default function MerchantSelector({ currentMerchantId, onMerchantChange }
         id="merchant-selector"
         value={merchantId}
         onChange={handleMerchantChange}
-        className="rounded-md p-1.5 text-sm border"
+        className="rounded-2xl p-1.5 text-sm border font-medium"
         style={{ 
           backgroundColor: "var(--light)",
           color: "var(--dark)",
