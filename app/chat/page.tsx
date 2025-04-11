@@ -11,6 +11,7 @@ interface Window {
   id: string;
   type: 'chart' | 'graph' | 'stats';
   title: string;
+  data?: any; // Add data property to store visualization data
 }
 
 // Define a global function that Gemini can call
@@ -27,7 +28,7 @@ export default function ChatPage() {
   const [dataWindows, setDataWindows] = useState<Window[]>([]);
 
   // Function to add a new data window
-  const addDataWindow = useCallback((type: 'chart' | 'graph' | 'stats', customTitle?: string, providedId?: string) => {
+  const addDataWindow = useCallback((type: 'chart' | 'graph' | 'stats', customTitle?: string, providedId?: string, windowData?: any) => {
     if (dataWindows.length >= 5 || !providedId) return; // Maximum 5 data windows + require providedId
     
     // Only use the ID provided from the API response
@@ -36,7 +37,8 @@ export default function ChatPage() {
                   type === 'graph' ? 'Performance Trends' : 'Key Statistics';
     const title = customTitle || defaultTitle;
     
-    setDataWindows(prevWindows => [...prevWindows, { id: newId, type, title }]);
+    setDataWindows(prevWindows => [...prevWindows, { id: newId, type, title, data: windowData }]);
+    
     return newId;
   }, [dataWindows]);
 
@@ -140,32 +142,6 @@ export default function ChatPage() {
             currentMerchantId={merchantId}
             onMerchantChange={setMerchantId}
           />
-          <div className="flex gap-2">
-            <button 
-              className="text-light px-3 py-1 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              style={{ backgroundColor: "var(--info)" }}
-              title="Chart windows can only be created by the AI assistant"
-              disabled={true} // No longer allow manual creation without IDs
-            >
-              + Chart
-            </button>
-            <button 
-              className="text-light px-3 py-1 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              style={{ backgroundColor: "var(--info)" }}
-              title="Graph windows can only be created by the AI assistant"
-              disabled={true} // No longer allow manual creation without IDs
-            >
-              + Graph
-            </button>
-            <button 
-              className="text-light px-3 py-1 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              style={{ backgroundColor: "var(--info)" }}
-              title="Stats windows can only be created by the AI assistant" 
-              disabled={true} // No longer allow manual creation without IDs
-            >
-              + Stats
-            </button>
-          </div>
         </div>
       </div>
 
@@ -206,7 +182,12 @@ export default function ChatPage() {
               className="h-[calc(100%-2.5rem)]"
               style={{ backgroundColor: "var(--light)", color: "var(--foreground)" }}
             >
-              <DataWindow type={window.type} merchantId={merchantId} />
+              <DataWindow 
+                type={window.type} 
+                merchantId={merchantId} 
+                data={window.data}
+                title={window.title}
+              />
             </div> 
           </div>
         ))}

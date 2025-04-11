@@ -8,7 +8,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 interface UseChatProps {
   initialMerchantId: string;
-  onAddDataWindow?: (type: 'chart' | 'graph' | 'stats', title?: string, providedId?: string) => string | undefined;
+  onAddDataWindow?: (type: 'chart' | 'graph' | 'stats', title?: string, providedId?: string, data?: any) => string | undefined;
 }
 
 export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
@@ -219,15 +219,16 @@ export function useChat({ initialMerchantId, onAddDataWindow }: UseChatProps) {
             if (onAddDataWindow && result.clientAction.params) {
               // Use type assertion to tell TypeScript this is a DataWindowActionParams
               const params = result.clientAction.params as DataWindowActionParams;
-              const { visualization_type, title, id } = params;
+              const { visualization_type, title, id, data } = params;
               
               // Only proceed if we have an ID (should be guaranteed by the check above)
               if (id) {
-                console.log('Adding data window with ID:', id);
+                console.log('Adding data window with ID:', id, 'with data:', data);
                 onAddDataWindow(
                   visualization_type, 
                   title,
-                  id
+                  id,
+                  data // Pass the data from client action params
                 );
                 
                 // Mark this result as processed using the stable ID (which equals the id)

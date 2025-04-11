@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { ConversationMessage, GeminiResponse } from "./types";
-import { dummy_getCurrentWeather, dummy_getWeatherForecast, display_data_window, get_top_selling_items, switch_language, get_weekly_sales, get_best_selling_day, get_item_suggestions } from "./functions";
+import { dummy_getCurrentWeather, dummy_getWeatherForecast, get_top_selling_items, switch_language, get_weekly_sales, get_best_selling_day, get_item_suggestions, set_data_window } from "./functions";
 import { getGeminiConfig, MODEL_NAME } from "./config";
 import { generateSuggestions } from "./suggestion-generator";
 
@@ -32,12 +32,14 @@ async function handleToolCall(
     );
     console.log(`Forecast function execution result: ${JSON.stringify(functionResult)}`);
   }
-  else if (tool_call.name === "display_data_window" && tool_call.args) {
-    functionResult = display_data_window(
+  // Removed display_data_window handling since that function is no longer exposed to the AI
+  else if (tool_call.name === "set_data_window" && tool_call.args) {
+    functionResult = set_data_window(
       tool_call.args.visualization_type as 'chart' | 'graph' | 'stats',
-      tool_call.args.title as string
+      tool_call.args.title as string,
+      tool_call.args.data // Pass the data argument provided by the AI
     );
-    console.log(`Display data window function execution result: ${JSON.stringify(functionResult)}`);
+    console.log(`Set data window function execution result: ${JSON.stringify(functionResult)}`);
   }
   else if (tool_call.name === "get_top_selling_items" && tool_call.args) {
     functionResult = await get_top_selling_items(
