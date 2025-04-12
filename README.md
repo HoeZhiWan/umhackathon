@@ -3,7 +3,8 @@
 ## Quick Links
 - **[Presentation Slides](#link-here)**: Pitching slides
 - **[Figma Design](#link-here)**: Figma prototype containing more features
-- **[Live Demo](https://umhackathon.vercel.app/)**: Check out our live demo!
+- **[Live Demo](https://umhackathon.vercel.app/)**: Check out our web app demo!
+- **[Video Demo](#link-here)**: Short video showcasing key functionalities and user interaction scenarios
 
 ![Demo Screenshot](public/README/live_demo.png)
 
