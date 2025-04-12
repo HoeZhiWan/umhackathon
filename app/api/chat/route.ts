@@ -5,8 +5,6 @@ import { ConversationMessage } from "@/app/gemini/types";
 export async function POST(request: NextRequest) {
   try {
     const { message, merchantId, language = 'en', history = [] } = await request.json();
-
-    // Call the Gemini response generator with the language parameter
     const response = await generateGeminiResponse(message, history, language);
 
     if (!response) {
@@ -16,7 +14,6 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Send the complete response to the client, including functionResults and suggestedPrompts
     return NextResponse.json({
       message: response.message,
       history: response.history,

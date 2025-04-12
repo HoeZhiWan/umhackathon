@@ -1,4 +1,3 @@
-// filepath: c:\Users\BreakableTime\Documents\Code Project\umhackathon\app\api\set-merchant\route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { setCurrentMerchant } from '../../lib/merchant-store';
 
@@ -14,13 +13,10 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Update merchant in cookie store
     setCurrentMerchant(merchantId, merchantName);
     
-    // Create a response
     const response = NextResponse.json({ success: true });
     
-    // Also set the cookies directly on the response for immediate effect
     response.cookies.set(
       'merchant_id', 
       merchantId, 

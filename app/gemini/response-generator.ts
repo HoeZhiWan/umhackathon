@@ -1,12 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 import { ConversationMessage, GeminiResponse } from "./types";
-import { dummy_getCurrentWeather, dummy_getWeatherForecast, get_top_selling_items, switch_language, get_weekly_sales, get_best_selling_day, get_item_suggestions, set_data_window, generate_description_and_image, add_menu_item_window, create_menu_item } from "./functions";
+import { get_top_selling_items, switch_language, get_weekly_sales, get_best_selling_day, get_item_suggestions, set_data_window, generate_description_and_image, add_menu_item_window, create_menu_item } from "./functions";
 import { getGeminiConfig, MODEL_NAME } from "./config";
 import { generateSuggestions } from "./suggestion-generator";
 
 const API_KEY = process.env.GEMINI_API_KEY;
 
-// Helper function to handle tool calls
 async function handleToolCall(
   tool_call: any, 
   updatedHistory: ConversationMessage[],
@@ -16,57 +15,33 @@ async function handleToolCall(
 ) {
   let functionResult;
   
-  // Execute the appropriate function based on tool_call name
-  if (tool_call.name === "get_current_weather" && tool_call.args) {
-    functionResult = dummy_getCurrentWeather(
-      tool_call.args.location as string, 
-      tool_call.args.unit as string
-    );
-    console.log(`Function execution result: ${JSON.stringify(functionResult)}`);
-  } 
-  else if (tool_call.name === "get_weather_forecast" && tool_call.args) {
-    functionResult = dummy_getWeatherForecast(
-      tool_call.args.location as string, 
-      tool_call.args.days as number || 3, 
-      tool_call.args.unit as string
-    );
-    console.log(`Forecast function execution result: ${JSON.stringify(functionResult)}`);
-  }
-  // Removed display_data_window handling since that function is no longer exposed to the AI
-  else if (tool_call.name === "set_data_window" && tool_call.args) {
+  if (tool_call.name === "set_data_window" && tool_call.args) {
     functionResult = set_data_window(
       tool_call.args.visualization_type as 'chart' | 'graph' | 'stats',
       tool_call.args.title as string,
-      tool_call.args.data // Pass the data argument provided by the AI
+      tool_call.args.data
     );
-    console.log(`Set data window function execution result: ${JSON.stringify(functionResult)}`);
   }
   else if (tool_call.name === "get_top_selling_items" && tool_call.args) {
     functionResult = await get_top_selling_items(
       tool_call.args.time_period as 'week' | 'month'
     );
-    console.log(`Top selling items function execution result: ${JSON.stringify(functionResult)}`);
   }
   else if (tool_call.name === "switch_language" && tool_call.args) {
     functionResult = switch_language(
       tool_call.args.language_code as string
     );
-    console.log(`Language switch function execution result: ${JSON.stringify(functionResult)}`);
     
-    // Update the language in the system instruction if switch was successful
     if (functionResult.success && config.systemInstruction && functionResult.language_code) {
-      // Extract current language instruction if it exists
       const langInstructRegex = /\n\nPlease respond in .+ language\./;
       const hasLangInstruct = langInstructRegex.test(config.systemInstruction);
       
       if (hasLangInstruct) {
-        // Replace existing language instruction
         config.systemInstruction = config.systemInstruction.replace(
           langInstructRegex,
           `\n\nPlease respond in ${getLanguageName(functionResult.language_code)} language.`
         );
       } else {
-        // Add new language instruction
         config.systemInstruction = config.systemInstruction + 
           `\n\nPlease respond in ${getLanguageName(functionResult.language_code)} language.`;
       }
@@ -74,46 +49,20 @@ async function handleToolCall(
   }
   else if (tool_call.name === "get_weekly_sales") {
     functionResult = await get_weekly_sales();
-    console.log(`Weekly sales function execution result: ${JSON.stringify(functionResult)}`);
   }
   else if (tool_call.name === "get_best_selling_day") {
     functionResult = await get_best_selling_day();
-    console.log(`Best selling day function execution result: ${JSON.stringify(functionResult)}`);
   }
   else if (tool_call.name === "get_item_suggestions") {
     functionResult = await get_item_suggestions();
-    console.log(`Item suggestions function execution result: ${JSON.stringify(functionResult)}`);
   }
   else if (tool_call.name === "generate_description_and_image" && tool_call.args) {
-    // Import the direct server-side storage function
     const { storeImageFromGemini } = await import('../lib/supabase-storage');
     
-    // First, generate the description and image using Gemini
-    const generationResult = await generate_description_and_image(
+    functionResult = await generate_description_and_image(
       tool_call.args.item_name as string,
       tool_call.args.cuisine_tag as string
     );
-    
-    // At this point, the image should already be processed and have a URL
-    // We'll just log the status for debugging
-    if (generationResult.success) {
-      if (generationResult.imageUrl) {
-        console.log('✅ Server-side: Image already processed with URL:', generationResult.imageUrl);
-      } else {
-        console.log('⚠️ Server-side: No image URL available in the result');
-      }
-    }
-    
-    // Return the result (with imageUrl if successful)
-    functionResult = generationResult;
-    
-    console.log(`Description and image generation result: ${JSON.stringify({
-      success: functionResult.success,
-      item_name: functionResult.item_name,
-      cuisine_tag: functionResult.cuisine_tag,
-      description: functionResult.description?.substring(0, 50) + '...',
-      hasImageUrl: !!functionResult.imageUrl
-    })}`);
   }
   else if (tool_call.name === "add_menu_item_window" && tool_call.args) {
     functionResult = add_menu_item_window(
@@ -122,66 +71,43 @@ async function handleToolCall(
       tool_call.args.description as string,
       tool_call.args.imageData as string
     );
-    console.log(`Add menu item window result: ${JSON.stringify({
-      success: functionResult.success,
-      item_name: functionResult.item_name,
-      cuisine_tag: functionResult.cuisine_tag,
-      id: functionResult.id
-    })}`);
   }
   else if (tool_call.name === "create_menu_item" && tool_call.args) {
     functionResult = await create_menu_item(
       tool_call.args.item_name as string,
       tool_call.args.cuisine_tag as string
     );
-    console.log(`Create menu item workflow result: ${JSON.stringify({
-      success: functionResult.success,
-      item_name: functionResult.item_name,
-      cuisine_tag: functionResult.cuisine_tag,
-      has_image: functionResult.has_image,
-      window_id: functionResult.window_id
-    })}`);
   }
   else {
-    // Return null if it's an unrecognized function
     return { finalResponse: null, updatedHistory, functionCallPart: null };
   }
   
-  // Add the function result to the array
   functionResults.push(functionResult);
   
-  // Create a function response part
   const function_response_part = {
     name: tool_call.name,
     response: { result: functionResult }
   };
 
-  // Model message with the function call
   const modelFunctionCallMessage = { 
     role: 'model', 
     parts: [{ functionCall: tool_call }] 
   };
   
-  // User message with function response
   const userFunctionResponseMessage = { 
     role: 'user', 
     parts: [{ functionResponse: function_response_part }] 
   };
 
-  // Add these to the conversation
   updatedHistory.push(modelFunctionCallMessage);
   updatedHistory.push(userFunctionResponseMessage);
 
-  // Get the next response from the model
   const finalResponse = await genAI.models.generateContent({
     model: MODEL_NAME,
     contents: updatedHistory,
     config: config
   });
   
-  console.log(`Response after ${tool_call.name} call:`, finalResponse.candidates?.[0]?.content?.parts);
-  
-  // Find if there are more function calls
   const functionCallPart = finalResponse.candidates?.[0]?.content?.parts?.find(
     part => part.functionCall
   );
@@ -198,7 +124,6 @@ export async function generateGeminiResponse(
     const genAI = new GoogleGenAI({apiKey: API_KEY});
     const config = getGeminiConfig();
 
-    // Add language instruction if not English
     if (language !== 'en') {
       const languageNames: Record<string, string> = {
         'ms': 'Malay (Bahasa Melayu)',
@@ -208,18 +133,15 @@ export async function generateGeminiResponse(
       
       const languageName = languageNames[language] || language;
       
-      // Add language instruction to config
       config.systemInstruction = (config.systemInstruction || '') + 
         `\n\nPlease respond in ${languageName} language.`;
     }
 
-    // Create a new message for the current user input
     const newUserMessage: ConversationMessage = {
       role: 'user',
       parts: [{ text: userInput }]
     };
     
-    // Combine existing conversation history with new user message
     const contents = [...conversationHistory, newUserMessage];
 
     const response = await genAI.models.generateContent({
@@ -228,18 +150,14 @@ export async function generateGeminiResponse(
       config: config
     });
 
-    console.log('Response:', response);
-
     let functionResults: Array<any> = [];
     let finalResponse = response;
-    let updatedHistory = [...contents]; // Start with existing history plus new user message
+    let updatedHistory = [...contents];
     
-    // Process function calls (if any)
     let functionCallPart = response.candidates?.[0]?.content?.parts?.find(
       part => part.functionCall
     );
     
-    // Loop to allow multiple function calls
     while (functionCallPart?.functionCall) {
       const result = await handleToolCall(
         functionCallPart.functionCall,
@@ -250,7 +168,7 @@ export async function generateGeminiResponse(
       );
       
       if (!result.finalResponse) {
-        break; // Unrecognized function
+        break;
       }
       
       finalResponse = result.finalResponse;
@@ -258,13 +176,9 @@ export async function generateGeminiResponse(
       functionCallPart = result.functionCallPart;
     }
     
-    // Extract final text response (without function calls)
     const responseWithResult = finalResponse.candidates?.[0]?.content?.parts || [];
-    
-    // Filter out any function calls from the final response parts
     const textResponseParts = responseWithResult.filter(part => !part.functionCall);
     
-    // Extract the text from the parts
     let textResponse = "";
     if (Array.isArray(textResponseParts)) {
       for (const part of textResponseParts) {
@@ -274,7 +188,6 @@ export async function generateGeminiResponse(
       }
     }
 
-    // Add the model's final response to history
     const modelResponseMessage = {
       role: 'model',
       parts: textResponseParts.map(part => ({
@@ -283,7 +196,6 @@ export async function generateGeminiResponse(
     };
     updatedHistory.push(modelResponseMessage);
 
-    // Generate suggested follow-up prompts using the dedicated module
     const suggestedPrompts = await generateSuggestions(updatedHistory, genAI, API_KEY, language);
 
     return {
@@ -300,7 +212,6 @@ export async function generateGeminiResponse(
   }
 }
 
-// Helper function to get full language name from code
 function getLanguageName(code: string): string {
   const languages: Record<string, string> = {
     'en': 'English',

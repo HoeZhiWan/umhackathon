@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-// Define available languages
 export const LANGUAGES = [
   { code: 'en', name: 'English' },
   { code: 'ms', name: 'Bahasa Melayu' },
@@ -28,7 +27,6 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
   
-  // Get the language name based on current code
   const languageName = LANGUAGES.find(lang => lang.code === language)?.name || 'English';
   
   return (

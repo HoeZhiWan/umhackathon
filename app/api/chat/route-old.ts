@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Type } from '@google/genai';
 
-// Predefined questions mapping
 const PREDEFINED_QUESTIONS: Record<string, string> = {
   "top selling": "get_top_selling_items",
   "best-selling day": "get_best_selling_day",
@@ -17,7 +16,6 @@ const PREDEFINED_QUESTIONS: Record<string, string> = {
   "how long does it usually take": "get_driver_arrival_time",
 };
 
-// Function implementations that return numbers only
 const functionImplementations: Record<string, () => Record<string, any>> = {
   get_top_selling_items: () => {
     const items = ['Chicken Wings', 'Burgers', 'Fries', 'Pizza', 'Salads', 'Pasta', 'Tacos', 'Burritos', 'Ice Cream'];
@@ -94,7 +92,6 @@ const functionImplementations: Record<string, () => Record<string, any>> = {
   }
 };
 
-// Define function declarations for Gemini AI
 const getFunctionDeclarations = (): FunctionDeclaration[] => {
   return [
     {
@@ -235,7 +232,6 @@ async function generateGeminiResponse(userInput: string): Promise<string> {
     
     console.log(initialResponse.functionCalls?.[0]); 
     
-    // Handle function call response
     if (initialResponse.functionCalls && initialResponse.functionCalls.length > 0) {
       const functionCall = initialResponse.functionCalls[0];
       const functionName = functionCall.name;
@@ -243,7 +239,6 @@ async function generateGeminiResponse(userInput: string): Promise<string> {
       if (functionName && functionName in functionImplementations) {
         const functionResult = functionImplementations[functionName]();
         
-        // Send function result back to the model
         const finalContent = [
           ...contents,
           {
@@ -276,7 +271,6 @@ async function generateGeminiResponse(userInput: string): Promise<string> {
 export async function POST(request: NextRequest) {
   try {
     const { message, merchantId } = await request.json();
-
     const aiResponse = await generateGeminiResponse(message);
     
     if (aiResponse) {

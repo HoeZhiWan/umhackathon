@@ -1,4 +1,3 @@
-// filepath: c:\Users\BreakableTime\Documents\Code Project\umhackathon\app\contexts\MerchantContext.tsx
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
