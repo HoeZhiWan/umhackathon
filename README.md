@@ -5,7 +5,7 @@
 - **[Figma Design](https://www.figma.com/design/O4d3tFzg5Y2Sw66dICkO9m/Prototype---404-Brain-Not-Found?node-id=0-1&t=hHF0mXPhrDIViRlZ-1)**: Figma prototype containing more features
 - **[Presentation Slides](https://www.figma.com/slides/uTaR75iZTboJcMvINC67wi/Slide---404-Brain-Not-Found?node-id=1-42&t=9JXEVPYToAJ8OAVI-1)**: Pitching slides
 - **[Documentation](https://docs.google.com/document/d/1KifS8Rt8KRC14o9OC35R2soWQobFJvVkrFaUrsmbiV8/edit?usp=sharing)**: Documentation outlining solution architecture, data utilization, and personalization strategies
-- **[Video Demo]([https://drive.google.com/drive/folders/1JIpxBCguC3PqZl5mHyDYC1kJzvqfYB6J?usp=sharing](https://drive.google.com/file/d/1MJdAB--GZ8cn01riNZUogVblNOcDO3st/view?usp=sharing))**: Short video showcasing key functionalities and user interaction scenarios
+- **[Video Demo](https://drive.google.com/file/d/1MJdAB--GZ8cn01riNZUogVblNOcDO3st/view?usp=sharing)**: Short video showcasing key functionalities and user interaction scenarios
 
 ![Demo Screenshot](public/README/live_demo.png)
 
