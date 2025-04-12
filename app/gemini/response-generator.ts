@@ -85,16 +85,34 @@ async function handleToolCall(
     console.log(`Item suggestions function execution result: ${JSON.stringify(functionResult)}`);
   }
   else if (tool_call.name === "generate_description_and_image" && tool_call.args) {
-    functionResult = await generate_description_and_image(
+    // Import the direct server-side storage function
+    const { storeImageFromGemini } = await import('../lib/supabase-storage');
+    
+    // First, generate the description and image using Gemini
+    const generationResult = await generate_description_and_image(
       tool_call.args.item_name as string,
       tool_call.args.cuisine_tag as string
     );
+    
+    // At this point, the image should already be processed and have a URL
+    // We'll just log the status for debugging
+    if (generationResult.success) {
+      if (generationResult.imageUrl) {
+        console.log('✅ Server-side: Image already processed with URL:', generationResult.imageUrl);
+      } else {
+        console.log('⚠️ Server-side: No image URL available in the result');
+      }
+    }
+    
+    // Return the result (with imageUrl if successful)
+    functionResult = generationResult;
+    
     console.log(`Description and image generation result: ${JSON.stringify({
       success: functionResult.success,
       item_name: functionResult.item_name,
       cuisine_tag: functionResult.cuisine_tag,
       description: functionResult.description?.substring(0, 50) + '...',
-      imageData: functionResult.imageData ? 'Generated successfully' : 'Not generated'
+      hasImageUrl: !!functionResult.imageUrl
     })}`);
   }
   else if (tool_call.name === "add_menu_item_window" && tool_call.args) {

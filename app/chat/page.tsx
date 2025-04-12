@@ -19,7 +19,7 @@ interface Window {
 declare global {
   interface Window {
     addDataWindowFromGemini?: (type: 'chart' | 'graph' | 'stats', title?: string, id?: string) => void;
-    addMenuItemWindowFromGemini?: (itemName: string, cuisineTag: string, description?: string, imageData?: string, id?: string) => void;
+    addMenuItemWindowFromGemini?: (itemName: string, cuisineTag: string, description?: string, imageData?: string, imageUrl?: string, id?: string) => void;
   }
 }
 
@@ -45,7 +45,7 @@ export default function ChatPage() {
   }, [dataWindows]);
 
   // Function to add a new menu item window
-  const addMenuItemWindow = useCallback((itemName: string, cuisineTag: string, description?: string, imageData?: string, providedId?: string) => {
+  const addMenuItemWindow = useCallback((itemName: string, cuisineTag: string, description?: string, imageData?: string, imageUrl?: string, providedId?: string) => {
     if (dataWindows.length >= 5) return; // Maximum 5 data windows
     
     // Generate ID if not provided
@@ -63,7 +63,8 @@ export default function ChatPage() {
           itemName,
           cuisineTag,
           description,
-          imageData
+          imageData, // Keep for backward compatibility
+          imageUrl   // Add support for imageUrl
         }
       }
     ]);
@@ -80,8 +81,8 @@ export default function ChatPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.addDataWindowFromGemini = (type, title, id) => addDataWindow(type, title, id);
-      window.addMenuItemWindowFromGemini = (itemName, cuisineTag, description, imageData, id) => 
-        addMenuItemWindow(itemName, cuisineTag, description, imageData, id);
+      window.addMenuItemWindowFromGemini = (itemName, cuisineTag, description, imageData, imageUrl, id) => 
+        addMenuItemWindow(itemName, cuisineTag, description, imageData, imageUrl, id);
     }
     
     return () => {
@@ -221,6 +222,7 @@ export default function ChatPage() {
                   cuisineTag={window.data?.cuisineTag || ""}
                   description={window.data?.description}
                   imageData={window.data?.imageData}
+                  imageUrl={window.data?.imageUrl}
                 />
               ) : (
                 <DataWindow 

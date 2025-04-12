@@ -444,12 +444,14 @@ export async function get_item_suggestions() {
 // Function to generate item description and AI image
 export async function generate_description_and_image(item_name: string, cuisine_tag: string) {
   try {
-    console.log('Generating description and image for:', { item_name, cuisine_tag });
+    console.log('📢 Generating description and image for:', { item_name, cuisine_tag });
 
     // Get the customized prompt from config
     const prompt = getDescriptionAndImagePrompt(item_name, cuisine_tag);
+    console.log('📝 Using prompt template for generation');
 
     // Generate both description and image in a single call
+    console.log('🔄 Calling Gemini API with model:', MODEL_NAME_IMAGE_GENERATION);
     const response = await genAIClient.models.generateContent({
       model: MODEL_NAME_IMAGE_GENERATION,
       contents: [
@@ -464,44 +466,119 @@ export async function generate_description_and_image(item_name: string, cuisine_
     });
 
     if (!response.candidates || response.candidates.length === 0) {
+      console.error('❌ No response received from Gemini API');
       throw new Error('No response received from Gemini API.');
     }
+
+    console.log('✅ Received response from Gemini API');
 
     // Extract description and image from response
     let description = '';
     let imageData: string | null = null;
+    let imageUrl: string | null = null;
 
     for (const part of response.candidates[0].content?.parts || []) {
       if (part.text) {
         // The first text part will typically be the description
         if (!description) {
           description = part.text;
+          console.log("📄 Extracted text content from response");
         }
-        console.log("Text content:", part.text);
       } else if (part.inlineData) {
         imageData = part.inlineData.data ?? null;
-        console.log("Image data generated successfully");
+        console.log("🖼️ Extracted image data from response, length:", imageData?.length || 0);
+        
+        // If image data exists, store it in Supabase via API
+        if (imageData) {
+          try {
+            console.log("🔄 Sending image data to API for storage...");
+            
+            // Determine if we're running in a browser or server environment
+            const isServer = typeof window === 'undefined';
+            console.log("🌐 Environment: " + (isServer ? "Server-side" : "Client-side"));
+            
+            // Construct an absolute URL for the API endpoint
+            let apiUrl = '/api/images';
+            if (isServer) {
+              // When running on the server, we need an absolute URL
+              const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL 
+                ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` 
+                : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+              apiUrl = `${baseUrl}/api/images`;
+              console.log("🌐 Using absolute URL for server-side request:", apiUrl);
+            } else {
+              console.log("🌐 Using relative URL for client-side request:", apiUrl);
+            }
+
+            // Make the API request with the appropriate URL
+            const response = await fetch(apiUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ imageData })
+            });
+            
+            console.log("📊 API response status:", response.status);
+            
+            if (response.ok) {
+              const result = await response.json();
+              console.log("📊 API response data:", result);
+              
+              if (result.success) {
+                imageUrl = result.url;
+                console.log("✅ Image stored successfully with URL:", imageUrl);
+              } else {
+                console.error("❌ Failed to store image:", result.error);
+              }
+            } else {
+              const errorText = await response.text().catch(() => "Could not read response text");
+              console.error("❌ Image storage API error:", response.status, errorText);
+            }
+          } catch (storageError) {
+            console.error("❌ Error calling image storage API:", storageError);
+          }
+        } else {
+          console.warn("⚠️ No image data received from Gemini");
+        }
       }
     }
 
     if (!description) {
+      console.error("❌ Failed to generate description");
       throw new Error('Failed to generate description.');
     }
+    
+    // Clean up the description by removing prefixes like "**description:**"
+    description = description
+      .replace(/^\s*\*{1,2}description:?\*{1,2}\s*/i, '') // Remove "*description:*" or "**description:**" at the start
+      .replace(/^\s*\*{1,2}image:?\*{1,2}.*/im, '') // Remove "*image:*" or "**image:**" sections
+      .replace(/^\s*\*{1,2}([^*]+)\*{1,2}\s*/g, '') // Remove any "*text*" or "**text**" at the start of lines
+      .trim();
+      
+    console.log("🧹 Cleaned up description:", description);
+
+    console.log("🏁 Returning generation result:", { 
+      success: true, 
+      hasDescription: !!description, 
+      hasImageUrl: !!imageUrl 
+    });
 
     return {
       success: true,
       item_name,
       cuisine_tag,
       description,
-      imageData,
+      imageData: null, // No longer passing the large base64 data
+      imageUrl, // Return the URL instead
     };
   } catch (error) {
-    console.error('Failed to generate description and image:', error);
+    console.error('❌ Failed to generate description and image:', error);
     return {
       success: false,
       error: (error as Error).message || 'Unknown error occurred',
       description: null,
-      imageData: null,
+      imageUrl: null,
     };
   }
 }
@@ -511,7 +588,7 @@ export function add_menu_item_window(
   item_name: string,
   cuisine_tag: string,
   description?: string,
-  imageData?: string
+  imageUrl?: string
 ) {
   try {
     if (!item_name || !cuisine_tag) {
@@ -530,7 +607,7 @@ export function add_menu_item_window(
       item_name,
       cuisine_tag,
       description,
-      imageData,
+      imageUrl,
       id: resultId,
       clientAction: {
         type: "ADD_MENU_ITEM_WINDOW",
@@ -538,7 +615,7 @@ export function add_menu_item_window(
           itemName: item_name, // Ensuring property names match what the client expects
           cuisineTag: cuisine_tag,
           description,
-          imageData,
+          imageUrl, // Using imageUrl instead of imageData
           id: resultId
         }
       }
@@ -571,7 +648,7 @@ export async function create_menu_item(item_name: string, cuisine_tag: string) {
       item_name,
       cuisine_tag,
       generationResult.description || undefined,
-      generationResult.imageData || undefined
+      generationResult.imageUrl || undefined
     );
 
     return {
@@ -579,7 +656,7 @@ export async function create_menu_item(item_name: string, cuisine_tag: string) {
       item_name,
       cuisine_tag,
       description: generationResult.description,
-      has_image: !!generationResult.imageData,
+      has_image: !!generationResult.imageUrl,
       window_id: windowResult.id,
       clientAction: windowResult.clientAction
     };

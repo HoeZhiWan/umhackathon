@@ -9,7 +9,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface UseChatProps {
   initialMerchantId: string;
   onAddDataWindow?: (type: 'chart' | 'graph' | 'stats', title?: string, providedId?: string, data?: any) => string | undefined;
-  onAddMenuItemWindow?: (itemName: string, cuisineTag: string, description?: string, imageData?: string, providedId?: string) => string | undefined;
+  onAddMenuItemWindow?: (itemName: string, cuisineTag: string, description?: string, imageData?: string, imageUrl?: string, providedId?: string) => string | undefined;
 }
 
 export function useChat({ initialMerchantId, onAddDataWindow, onAddMenuItemWindow }: UseChatProps) {
@@ -247,9 +247,10 @@ export function useChat({ initialMerchantId, onAddDataWindow, onAddMenuItemWindo
                 cuisineTag: string;
                 description?: string;
                 imageData?: string;
+                imageUrl?: string;
                 id?: string;
               };
-              const { itemName, cuisineTag, description, imageData, id } = params;
+              const { itemName, cuisineTag, description, imageData, imageUrl, id } = params;
               
               if (itemName && cuisineTag) {
                 console.log('Adding menu item window with data:', { itemName, cuisineTag, description });
@@ -258,6 +259,7 @@ export function useChat({ initialMerchantId, onAddDataWindow, onAddMenuItemWindo
                   cuisineTag,
                   description,
                   imageData,
+                  imageUrl,
                   id || stableId
                 );
                 

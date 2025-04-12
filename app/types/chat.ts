@@ -34,6 +34,7 @@ export interface MenuItemWindowActionParams {
   cuisineTag: string;
   description?: string;
   imageData?: string;
+  imageUrl?: string;
   id?: string;
 }
 
